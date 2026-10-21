@@ -13,7 +13,8 @@ const TARGET_URL = 'https://nextchallenge.tech'
 
 async function verifyLive() {
   console.log('🌐 ========================================================')
-  console.log('🌐 VERIFYING LIVE PRODUCTION: ' + TARGET_URL)
+  console.log('🌐 VERIFYING LIVE PRODUCTION WITH OFFICIAL LOGO')
+  console.log('🌐 Domain: ' + TARGET_URL)
   console.log('🌐 ========================================================\n')
 
   const browser = await puppeteer.launch({
@@ -49,6 +50,35 @@ async function verifyLive() {
   const dirFr = await page.$eval('html', (el) => el.getAttribute('dir'))
   const titleFr = await page.title()
   console.log(`  ✅ French Loaded: lang="${langFr}", dir="${dirFr}", title="${titleFr}"`)
+
+  // Verify Official Logo on Live Production
+  console.log('\n🔎 Verifying Official Logo on Live Production...')
+  const logoInfo = await page.evaluate(() => {
+    const images = Array.from(document.querySelectorAll('.brand-logo__img'))
+    return images.map((img) => ({
+      src: img.src,
+      naturalWidth: img.naturalWidth,
+      naturalHeight: img.naturalHeight,
+      clientWidth: img.clientWidth,
+      clientHeight: img.clientHeight,
+      objectFit: window.getComputedStyle(img).objectFit,
+      complete: img.complete
+    }))
+  })
+  console.log(`  Found ${logoInfo.length} live logo instances:`, logoInfo)
+  for (const [i, l] of logoInfo.entries()) {
+    if (!l.src.includes('logo-quality.png')) {
+      throw new Error(`Logo ${i} on live site missing logo-quality.png: ${l.src}`)
+    }
+    if (l.naturalWidth !== 1696 || l.naturalHeight !== 624) {
+      throw new Error(`Logo ${i} on live site natural dimensions invalid: ${l.naturalWidth}x${l.naturalHeight}`)
+    }
+    if (l.objectFit !== 'contain') {
+      throw new Error(`Logo ${i} on live site object-fit is ${l.objectFit}, expected contain`)
+    }
+    console.log(`  ✅ Live Logo #${i + 1}: ${l.naturalWidth}x${l.naturalHeight} natural, rendered ${l.clientWidth}x${l.clientHeight}px, object-fit: contain`)
+  }
+
   await page.screenshot({ path: path.join(liveDir, 'live_fr_desktop.png'), fullPage: false })
 
   // 2. Switch to English
@@ -87,7 +117,7 @@ async function verifyLive() {
   await page.screenshot({ path: path.join(liveDir, 'live_ar_desktop.png'), fullPage: false })
 
   // 4. Test Mobile RTL
-  console.log('\n4️⃣ Testing Live Mobile in Arabic RTL...')
+  console.log('\n4️⃣ Testing Live Mobile in Arabic RTL (390px)...')
   await page.setViewport({ width: 390, height: 844 })
   await new Promise((r) => setTimeout(r, 400))
   const overflow = await page.evaluate(() => {
