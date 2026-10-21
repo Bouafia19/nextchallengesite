@@ -246,49 +246,44 @@ Timestamp: ${new Date().toISOString()}
     `
   }
 
-  const hasSmtpConfig = process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS
+  // SMTP Configuration
+  const smtpUser = process.env.SMTP_USER || process.env.MAIL_USER
+  const smtpPass = process.env.SMTP_PASS || process.env.MAIL_PASS
+  const smtpHost = process.env.SMTP_HOST || 'smtp.gmail.com'
+  const smtpPort = Number(process.env.SMTP_PORT) || 587
+  const smtpSecure = process.env.SMTP_SECURE === 'true' || smtpPort === 465
+  const hasSmtpConfig = Boolean(smtpUser && smtpPass)
 
-  if (hasSmtpConfig) {
-    try {
-      const transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST,
-        port: Number(process.env.SMTP_PORT) || 587,
-        secure: process.env.SMTP_SECURE === 'true' || Number(process.env.SMTP_PORT) === 465,
-        auth: {
-          user: process.env.SMTP_USER,
-          pass: process.env.SMTP_PASS
-        }
-      })
+  if (!hasSmtpConfig) {
+    console.warn('[Contact API] SMTP credentials not configured (SMTP_USER/SMTP_PASS missing). Email not sent.')
+    return res.status(503).json({
+      success: false,
+      message: 'Email service is currently awaiting SMTP configuration. Please reach us directly at nextchallenge2021@gmail.com or call 0552 56 96 54.'
+    })
+  }
 
-      await transporter.sendMail(mailOptions)
+  try {
+    const transporter = nodemailer.createTransport({
+      host: smtpHost,
+      port: smtpPort,
+      secure: smtpSecure,
+      auth: {
+        user: smtpUser,
+        pass: smtpPass
+      }
+    })
 
-      return res.status(200).json({
-        success: true,
-        message: 'Your message has been delivered to Next Challenge successfully.'
-      })
-    } catch (err) {
-      console.error('[SMTP Error]', err)
-      return res.status(500).json({
-        success: false,
-        message: 'Failed to deliver message via mail server. Please contact us directly by phone or email.'
-      })
-    }
-  } else {
-    // Development / Audit fallback: Log securely to server audit log
-    console.log('\n========================================')
-    console.log('[Next Challenge Website Contact Submission]')
-    console.log(`To: ${RECEIVER_EMAIL}`)
-    console.log(`From: ${rawName} <${rawEmail}>`)
-    console.log(`Phone: ${rawPhone}`)
-    console.log(`Company: ${rawCompany}`)
-    console.log(`Subject: ${rawSubject}`)
-    console.log(`Message:\n${rawMessage}`)
-    console.log('NOTE: Configure SMTP_HOST, SMTP_USER, SMTP_PASS in environment to send real emails.')
-    console.log('========================================\n')
+    await transporter.sendMail(mailOptions)
 
     return res.status(200).json({
       success: true,
-      message: 'Your message has been received by Next Challenge.'
+      message: 'Your message has been delivered to Next Challenge successfully.'
+    })
+  } catch (err) {
+    console.error('[SMTP Delivery Error]', err.message || err)
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to deliver message via mail server. Please contact us directly by phone at 0552 56 96 54 or email nextchallenge2021@gmail.com.'
     })
   }
 })
