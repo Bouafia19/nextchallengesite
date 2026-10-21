@@ -131,9 +131,9 @@ async function runAudit() {
     }
 
     // ----------------------------------------------------
-    // 1b. Auditing Official Logo (/logo-quality.png)
+    // 1b. Auditing Modernized Brand Logo (/next-challenge-modernized-logo.png)
     // ----------------------------------------------------
-    console.log('\n🔎 Auditing Official Brand Logo (/logo-quality.png)...')
+    console.log('\n🔎 Auditing Modernized Brand Logo (/next-challenge-modernized-logo.png)...')
     const logoAudit = await page.evaluate(() => {
       const images = Array.from(document.querySelectorAll('.brand-logo__img'))
       return images.map((img) => {
@@ -156,10 +156,10 @@ async function runAudit() {
     }
 
     for (const [idx, item] of logoAudit.entries()) {
-      if (!item.src.includes('logo-quality.png')) {
-        throw new Error(`Logo instance ${idx} does not use /logo-quality.png: ${item.src}`)
+      if (!item.src.includes('next-challenge-modernized-logo.png')) {
+        throw new Error(`Logo instance ${idx} does not use /next-challenge-modernized-logo.png: ${item.src}`)
       }
-      if (!item.isComplete || item.naturalWidth !== 1696 || item.naturalHeight !== 624) {
+      if (!item.isComplete || item.naturalWidth !== 2048 || item.naturalHeight !== 2048) {
         throw new Error(`Logo instance ${idx} has invalid natural dimensions: ${item.naturalWidth}x${item.naturalHeight}`)
       }
       if (item.objectFit !== 'contain') {

@@ -16,7 +16,7 @@ const props = defineProps({
   },
   showText: {
     type: Boolean,
-    default: false
+    default: true
   },
   to: {
     type: String,
@@ -33,14 +33,14 @@ const computedHeight = computed(() => {
 <template>
   <a :href="to" class="brand-logo" aria-label="Next Challenge Home">
     <img
-      src="/logo-quality.png"
+      src="/next-challenge-modernized-logo.png"
       alt="Next Challenge Logo"
       class="brand-logo__img"
       :style="{ height: computedHeight }"
       loading="eager"
       decoding="async"
     />
-    <span v-if="showText" class="brand-logo__wordmark">
+    <span v-if="!compact && showText" class="brand-logo__wordmark">
       <span class="brand-logo__word-next">Next</span>
       <span class="brand-logo__word-challenge">Challenge</span>
     </span>
@@ -70,9 +70,9 @@ const computedHeight = computed(() => {
   max-width: 100%;
   object-fit: contain;
   display: block;
-  border-radius: 6px;
-  /* Preserve original 1696x624 aspect ratio */
-  aspect-ratio: 1696 / 624;
+  border-radius: 8px;
+  /* 1:1 Aspect ratio for circular emblem */
+  aspect-ratio: 1 / 1;
 }
 
 .brand-logo__wordmark {
@@ -82,6 +82,7 @@ const computedHeight = computed(() => {
   letter-spacing: -0.03em;
   display: inline-flex;
   align-items: center;
+  white-space: nowrap;
 }
 
 .brand-logo__word-next {
@@ -93,11 +94,20 @@ const computedHeight = computed(() => {
 }
 
 .brand-logo__word-challenge {
-  color: #5b54e8;
-  margin-left: 2px;
+  color: #00d2ff;
+  margin-left: 3px;
 }
 
 .v-theme--nextChallengeLight .brand-logo__word-challenge {
-  color: #4f46e5;
+  color: #0284c7;
+}
+
+@media (max-width: 420px) {
+  .brand-logo {
+    gap: 8px;
+  }
+  .brand-logo__wordmark {
+    font-size: 1.05rem;
+  }
 }
 </style>
