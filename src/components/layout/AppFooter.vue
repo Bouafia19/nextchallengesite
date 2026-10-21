@@ -124,14 +124,14 @@ const scrollTo = (href) => {
 
             <div class="d-flex align-center ga-2">
               <v-icon icon="mdi-phone-outline" size="18" color="secondary" class="flex-shrink-0" />
-              <a :href="siteConfig.phoneTel" class="contact-link">
+              <a :href="siteConfig.phoneTel" class="contact-link font-weight-medium">
                 {{ siteConfig.phone }}
               </a>
             </div>
 
-            <div class="d-flex align-center ga-2">
-              <v-icon icon="mdi-email-outline" size="18" color="secondary" class="flex-shrink-0" />
-              <a :href="siteConfig.emailMailto" class="contact-link text-break">
+            <div class="d-flex align-start ga-2">
+              <v-icon icon="mdi-email-outline" size="18" color="secondary" class="mt-1 flex-shrink-0" />
+              <a :href="siteConfig.emailMailto" class="contact-link font-weight-medium email-text">
                 {{ siteConfig.email }}
               </a>
             </div>
@@ -200,6 +200,10 @@ const scrollTo = (href) => {
   color: inherit;
   text-decoration: none;
   transition: color 0.2s ease;
+}
+
+.email-text {
+  word-break: break-all;
 }
 
 .contact-link:hover {

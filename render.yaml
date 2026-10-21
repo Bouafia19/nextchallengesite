@@ -1,27 +1,23 @@
 services:
-  # Next Challenge — Render Static Site Deployment (Production CDN)
-  # Domain: https://nextchallenge.tech
+  # ============================================================================
+  # OPTION 1 (RECOMMENDED): Unified Full-Stack Node Web Service
+  # Serves both the Vue 3 production static site AND the /api/contact email backend.
+  # Zero CORS issues, zero missing API routes, 100% turnkey for nextchallenge.tech.
+  # ============================================================================
   - type: web
     name: nextchallenge-tech
-    runtime: static
+    runtime: node
+    plan: free
+    region: frankfurt
     buildCommand: npm install && npm run build
-    staticPublishPath: ./dist
+    startCommand: node server/server.js
+    healthCheckPath: /health
     autoDeploy: true
-    headers:
-      - path: /*
-        name: X-Frame-Options
-        value: SAMEORIGIN
-      - path: /*
-        name: X-Content-Type-Options
-        value: nosniff
-      - path: /*
-        name: Referrer-Policy
-        value: strict-origin-when-cross-origin
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
     envVars:
+      - key: NODE_ENV
+        value: production
+      - key: CONTACT_RECEIVER_EMAIL
+        value: nextchallenge2021@gmail.com
       - key: VITE_CONTACT_API_URL
         value: /api/contact
       - key: VITE_FLEETORA_URL
@@ -36,23 +32,8 @@ services:
         sync: false
       - key: VITE_LINKEDIN_URL
         sync: false
-
-  # Next Challenge — Backend Contact Service (Express + Nodemailer)
-  # Can be deployed alongside static site or as a unified fullstack web service
-  - type: web
-    name: nextchallenge-server
-    runtime: node
-    plan: free
-    region: frankfurt
-    buildCommand: npm install && npm run build
-    startCommand: node server/server.js
-    healthCheckPath: /health
-    autoDeploy: true
-    envVars:
-      - key: NODE_ENV
-        value: production
-      - key: CONTACT_RECEIVER_EMAIL
-        value: nextchallenge2021@gmail.com
+      # SMTP Configuration for Production Email Delivery
+      # Leave blank to safely log inquiries to server audit logs, or provide credentials:
       - key: SMTP_HOST
         sync: false
       - key: SMTP_PORT
@@ -62,4 +43,6 @@ services:
       - key: SMTP_USER
         sync: false
       - key: SMTP_PASS
+        sync: false
+      - key: SMTP_FROM
         sync: false
