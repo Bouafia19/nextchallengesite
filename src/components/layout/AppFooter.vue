@@ -22,7 +22,7 @@ const scrollTo = (href) => {
         <!-- Col 1: Brand Info & Socials -->
         <v-col cols="12" md="4" :class="isRtl ? 'pl-md-8' : 'pr-md-8'">
           <div class="mb-4">
-            <BrandLogo :size="36" />
+            <BrandLogo :size="48" />
           </div>
           <p class="text-body-2 text-medium-emphasis line-height-relaxed mb-6">
             {{ t('footer.tagline') }}

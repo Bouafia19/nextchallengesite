@@ -48,7 +48,7 @@ const navigateTo = (href) => {
   >
     <v-container class="d-flex align-center justify-space-between py-3 px-4 px-md-6">
       <!-- Brand Logo -->
-      <BrandLogo :size="36" />
+      <BrandLogo :size="42" />
 
       <!-- Desktop Navigation Links -->
       <nav class="d-none d-md-flex align-center ga-1" aria-label="Main Navigation">
@@ -140,7 +140,7 @@ const navigateTo = (href) => {
       <div>
         <!-- Drawer Header -->
         <div class="d-flex align-center justify-space-between mb-4 pb-3 border-b">
-          <BrandLogo :size="32" @click="drawer = false" />
+          <BrandLogo :size="36" @click="drawer = false" />
           <v-btn
             icon="mdi-close"
             variant="text"

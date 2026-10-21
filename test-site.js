@@ -131,6 +131,44 @@ async function runAudit() {
     }
 
     // ----------------------------------------------------
+    // 1b. Auditing Official Logo (/logo-quality.png)
+    // ----------------------------------------------------
+    console.log('\n🔎 Auditing Official Brand Logo (/logo-quality.png)...')
+    const logoAudit = await page.evaluate(() => {
+      const images = Array.from(document.querySelectorAll('.brand-logo__img'))
+      return images.map((img) => {
+        const style = window.getComputedStyle(img)
+        return {
+          src: img.src,
+          naturalWidth: img.naturalWidth,
+          naturalHeight: img.naturalHeight,
+          clientWidth: img.clientWidth,
+          clientHeight: img.clientHeight,
+          objectFit: style.objectFit,
+          isComplete: img.complete
+        }
+      })
+    })
+
+    console.log(`  Found ${logoAudit.length} logo instances on page:`, logoAudit)
+    if (logoAudit.length < 2) {
+      throw new Error(`Expected at least 2 brand logo instances (navbar + footer), found ${logoAudit.length}`)
+    }
+
+    for (const [idx, item] of logoAudit.entries()) {
+      if (!item.src.includes('logo-quality.png')) {
+        throw new Error(`Logo instance ${idx} does not use /logo-quality.png: ${item.src}`)
+      }
+      if (!item.isComplete || item.naturalWidth !== 1696 || item.naturalHeight !== 624) {
+        throw new Error(`Logo instance ${idx} has invalid natural dimensions: ${item.naturalWidth}x${item.naturalHeight}`)
+      }
+      if (item.objectFit !== 'contain') {
+        throw new Error(`Logo instance ${idx} missing object-fit: contain (got ${item.objectFit})`)
+      }
+      console.log(`  ✅ Logo #${idx + 1} verified: natural ${item.naturalWidth}x${item.naturalHeight}, rendered ${item.clientWidth}x${item.clientHeight}px, object-fit: ${item.objectFit}`)
+    }
+
+    // ----------------------------------------------------
     // 2. Language Selector & Real-Time Switching
     // ----------------------------------------------------
     console.log('\n2️⃣ Auditing Language Switching (FR -> EN -> AR)...')

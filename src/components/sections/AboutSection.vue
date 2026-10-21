@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { siteConfig } from '@/config/site.js'
+import BrandLogo from '../layout/BrandLogo.vue'
 
 const { t, tm, locale } = useI18n()
 const isRtl = computed(() => locale.value === 'ar')
@@ -52,17 +53,10 @@ const isRtl = computed(() => locale.value === 'ar')
         <!-- Right: Official Company Information Card -->
         <v-col cols="12" lg="5">
           <v-card class="nc-glass-card company-card pa-8" rounded="xl">
-            <div class="d-flex align-center ga-3 mb-6 pb-4 border-b border-subtle">
-              <div class="company-badge-icon">
-                <v-icon icon="mdi-shield-check" size="28" color="secondary" />
-              </div>
-              <div>
-                <h3 class="text-h6 font-weight-bold tracking-tight">
-                  {{ siteConfig.name }}
-                </h3>
-                <div class="text-caption text-medium-emphasis font-weight-medium mono-font" dir="ltr">
-                  {{ siteConfig.legalName }}
-                </div>
+            <div class="d-flex align-center justify-space-between mb-6 pb-4 border-b border-subtle">
+              <BrandLogo :size="46" />
+              <div class="text-caption text-medium-emphasis font-weight-medium mono-font text-right" dir="ltr">
+                {{ siteConfig.legalName }}
               </div>
             </div>
 
