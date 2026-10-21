@@ -100,7 +100,7 @@ async function runAudit() {
     await page.setCacheEnabled(false)
     await page.setViewport({ width: 1440, height: 900 })
 
-    const response = await page.goto(BASE_URL, { waitUntil: 'networkidle0', timeout: 15000 })
+    const response = await page.goto(BASE_URL, { waitUntil: 'networkidle2', timeout: 30000 })
     await page.evaluate(() => localStorage.removeItem('nextchallenge_lang'))
 
     if (!response || ![200, 304].includes(response.status())) {
@@ -245,7 +245,7 @@ async function runAudit() {
     console.log('\n3️⃣ Auditing Persistence & Fallback Recovery...')
 
     // Reload while Arabic is stored
-    await page.reload({ waitUntil: 'networkidle0' })
+    await page.reload({ waitUntil: 'networkidle2' })
     const reloadedLang = await page.$eval('html', (el) => el.getAttribute('lang'))
     const reloadedDir = await page.$eval('html', (el) => el.getAttribute('dir'))
     console.log(`  ✅ After reload: retained lang="${reloadedLang}", dir="${reloadedDir}"`)
@@ -255,7 +255,7 @@ async function runAudit() {
 
     // Corrupt localStorage to simulate invalid value
     await page.evaluate(() => localStorage.setItem('nextchallenge_lang', 'invalid_code_xyz'))
-    await page.reload({ waitUntil: 'networkidle0' })
+    await page.reload({ waitUntil: 'networkidle2' })
     const fallbackLang = await page.$eval('html', (el) => el.getAttribute('lang'))
     const fallbackDir = await page.$eval('html', (el) => el.getAttribute('dir'))
     console.log(`  ✅ Invalid language fallback: lang="${fallbackLang}", dir="${fallbackDir}"`)
