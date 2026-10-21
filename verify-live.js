@@ -52,7 +52,7 @@ async function verifyLive() {
   console.log(`  ✅ French Loaded: lang="${langFr}", dir="${dirFr}", title="${titleFr}"`)
 
   // Verify Official Logo on Live Production
-  console.log('\n🔎 Verifying Official Logo on Live Production...')
+  console.log('\n🔎 Verifying Modernized Logo on Live Production...')
   const logoInfo = await page.evaluate(() => {
     const images = Array.from(document.querySelectorAll('.brand-logo__img'))
     return images.map((img) => ({
@@ -67,10 +67,10 @@ async function verifyLive() {
   })
   console.log(`  Found ${logoInfo.length} live logo instances:`, logoInfo)
   for (const [i, l] of logoInfo.entries()) {
-    if (!l.src.includes('logo-quality.png')) {
-      throw new Error(`Logo ${i} on live site missing logo-quality.png: ${l.src}`)
+    if (!l.src.includes('next-challenge-modernized-logo.png')) {
+      throw new Error(`Logo ${i} on live site missing next-challenge-modernized-logo.png: ${l.src}`)
     }
-    if (l.naturalWidth !== 1696 || l.naturalHeight !== 624) {
+    if (l.naturalWidth !== 2048 || l.naturalHeight !== 2048) {
       throw new Error(`Logo ${i} on live site natural dimensions invalid: ${l.naturalWidth}x${l.naturalHeight}`)
     }
     if (l.objectFit !== 'contain') {
