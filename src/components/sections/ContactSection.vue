@@ -1,6 +1,10 @@
 <script setup>
-import { ref, reactive, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { siteConfig } from '@/config/site.js'
+
+const { t, tm, locale } = useI18n()
+const isRtl = computed(() => locale.value === 'ar')
 
 const formRef = ref(null)
 const isValid = ref(false)
@@ -17,32 +21,24 @@ const formData = reactive({
   message: ''
 })
 
-const subjectOptions = [
-  'Custom Web Application Development',
-  'Mobile App Development (iOS/Android)',
-  'Enterprise ERP & Inventory Platform',
-  'AI Solutions & Automation',
-  'API Integration & Microservices',
-  'Cloud Infrastructure & DevOps',
-  'Maintenance & SLA Support',
-  'General Consultation / Other'
-]
+const subjectOptions = computed(() => tm('contact.subjects') || [])
 
 // Validation rules
-const rules = {
-  required: (v) => !!v?.trim() || 'This field is required',
+const rules = computed(() => ({
+  required: (v) => !!v?.trim() || t('contact.validation.required'),
   email: (v) => {
     const pattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
-    return pattern.test(v?.trim()) || 'Please enter a valid email address'
+    return pattern.test(v?.trim()) || t('contact.validation.email')
   },
   minLength: (min) => (v) =>
-    (v && v.trim().length >= min) || `Must be at least ${min} characters`
-}
+    (v && v.trim().length >= min) || t('contact.validation.minLength', { min })
+}))
 
 // Listen for subject pre-selection from services or elsewhere
 const handleSubjectEvent = (event) => {
   if (event.detail?.subject) {
-    const match = subjectOptions.find((opt) =>
+    const options = subjectOptions.value
+    const match = options.find((opt) =>
       opt.toLowerCase().includes(event.detail.subject.toLowerCase())
     )
     formData.subject = match || event.detail.subject
@@ -86,7 +82,15 @@ const handleSubmit = async () => {
     const data = await response.json().catch(() => ({}))
 
     if (!response.ok) {
-      throw new Error(data.message || `Submission failed with status ${response.status}`)
+      if (response.status === 503 || (data.message && data.message.includes('SMTP'))) {
+        throw new Error(
+          t('contact.alerts.smtpUnavailable', {
+            email: siteConfig.email,
+            phone: siteConfig.phone
+          })
+        )
+      }
+      throw new Error(data.message || t('contact.alerts.errorTitle'))
     }
 
     isSuccess.value = true
@@ -101,7 +105,10 @@ const handleSubmit = async () => {
   } catch (err) {
     errorMessage.value =
       err.message ||
-      'An unexpected error occurred while sending your message. Please reach us directly via email or phone.'
+      t('contact.alerts.smtpUnavailable', {
+        email: siteConfig.email,
+        phone: siteConfig.phone
+      })
   } finally {
     isLoading.value = false
   }
@@ -120,13 +127,13 @@ const resetSuccess = () => {
       <div class="text-center max-w-700 mx-auto mb-12">
         <span class="badge-pill mb-3">
           <v-icon icon="mdi-email-check-outline" size="16" color="secondary" class="mr-1" />
-          Direct Inquiries
+          {{ t('contact.badge') }}
         </span>
         <h2 class="text-h3 font-weight-bold mb-4 tracking-tight">
-          Let's Build Something Great Together
+          {{ t('contact.title') }}
         </h2>
         <p class="text-h6 font-weight-regular text-medium-emphasis">
-          Have an upcoming project or need enterprise consultation? Send us a direct message and our engineering team will respond promptly.
+          {{ t('contact.subtitle') }}
         </p>
       </div>
 
@@ -143,10 +150,11 @@ const resetSuccess = () => {
               class="mb-6 pa-6"
               icon="mdi-check-decagram"
             >
-              <div class="text-h6 font-weight-bold mb-2">Message Sent Successfully!</div>
+              <div class="text-h6 font-weight-bold mb-2">
+                {{ t('contact.alerts.successTitle') }}
+              </div>
               <p class="text-body-2 mb-4">
-                Thank you for reaching out. Your message has been delivered to
-                <strong>{{ siteConfig.email }}</strong>. Our team in Sétif will review your project requirements and get back to you shortly.
+                {{ t('contact.alerts.successBody', { email: siteConfig.email }) }}
               </p>
               <v-btn
                 color="success"
@@ -156,7 +164,7 @@ const resetSuccess = () => {
                 prepend-icon="mdi-refresh"
                 @click="resetSuccess"
               >
-                Send Another Message
+                {{ t('contact.alerts.sendAnother') }}
               </v-btn>
             </v-alert>
 
@@ -172,13 +180,19 @@ const resetSuccess = () => {
               icon="mdi-alert-circle-outline"
               @click:close="errorMessage = ''"
             >
-              <div class="font-weight-bold text-body-1 mb-1">Message Delivery Error</div>
+              <div class="font-weight-bold text-body-1 mb-1">
+                {{ t('contact.alerts.errorTitle') }}
+              </div>
               <div class="text-body-2 mb-2">{{ errorMessage }}</div>
               <div class="text-caption">
-                You can also email us directly at
-                <a :href="siteConfig.emailMailto" class="font-weight-bold text-white">{{ siteConfig.email }}</a>
-                or call
-                <a :href="siteConfig.phoneTel" class="font-weight-bold text-white">{{ siteConfig.phone }}</a>.
+                {{ t('contact.alerts.fallbackNotice') }}
+                <a :href="siteConfig.emailMailto" class="font-weight-bold text-white ltr-text" dir="ltr">
+                  {{ siteConfig.email }}
+                </a>
+                {{ t('contact.alerts.orCall') }}
+                <a :href="siteConfig.phoneTel" class="font-weight-bold text-white ltr-text" dir="ltr">
+                  {{ siteConfig.phone }}
+                </a>.
               </div>
             </v-alert>
 
@@ -194,13 +208,13 @@ const resetSuccess = () => {
                 <!-- Full Name -->
                 <v-col cols="12" sm="6">
                   <label class="input-label" for="field-fullname">
-                    Full Name <span class="text-error">*</span>
+                    {{ t('contact.form.fullName') }} <span class="text-error">*</span>
                   </label>
                   <v-text-field
                     id="field-fullname"
                     v-model="formData.fullName"
                     :rules="[rules.required, rules.minLength(2)]"
-                    placeholder="e.g. John Doe / Mohamed Amine"
+                    :placeholder="t('contact.form.fullNamePlaceholder')"
                     prepend-inner-icon="mdi-account-outline"
                     required
                   />
@@ -209,15 +223,16 @@ const resetSuccess = () => {
                 <!-- Email -->
                 <v-col cols="12" sm="6">
                   <label class="input-label" for="field-email">
-                    Email Address <span class="text-error">*</span>
+                    {{ t('contact.form.email') }} <span class="text-error">*</span>
                   </label>
                   <v-text-field
                     id="field-email"
                     v-model="formData.email"
                     :rules="[rules.required, rules.email]"
-                    placeholder="name@company.com"
+                    :placeholder="t('contact.form.emailPlaceholder')"
                     prepend-inner-icon="mdi-email-outline"
                     type="email"
+                    dir="ltr"
                     required
                   />
                 </v-col>
@@ -225,26 +240,27 @@ const resetSuccess = () => {
                 <!-- Phone -->
                 <v-col cols="12" sm="6">
                   <label class="input-label" for="field-phone">
-                    Phone Number
+                    {{ t('contact.form.phone') }}
                   </label>
                   <v-text-field
                     id="field-phone"
                     v-model="formData.phone"
-                    placeholder="e.g. 0552 56 96 54 / +213 ..."
+                    :placeholder="t('contact.form.phonePlaceholder')"
                     prepend-inner-icon="mdi-phone-outline"
                     type="tel"
+                    dir="ltr"
                   />
                 </v-col>
 
                 <!-- Company -->
                 <v-col cols="12" sm="6">
                   <label class="input-label" for="field-company">
-                    Company / Organization
+                    {{ t('contact.form.company') }}
                   </label>
                   <v-text-field
                     id="field-company"
                     v-model="formData.company"
-                    placeholder="e.g. Enterprise SARL"
+                    :placeholder="t('contact.form.companyPlaceholder')"
                     prepend-inner-icon="mdi-domain"
                   />
                 </v-col>
@@ -252,14 +268,14 @@ const resetSuccess = () => {
                 <!-- Subject -->
                 <v-col cols="12">
                   <label class="input-label" for="field-subject">
-                    Subject / Area of Interest <span class="text-error">*</span>
+                    {{ t('contact.form.subject') }} <span class="text-error">*</span>
                   </label>
                   <v-combobox
                     id="field-subject"
                     v-model="formData.subject"
                     :items="subjectOptions"
                     :rules="[rules.required]"
-                    placeholder="Select or type your subject"
+                    :placeholder="t('contact.form.subjectPlaceholder')"
                     prepend-inner-icon="mdi-tag-outline"
                     variant="outlined"
                     density="comfortable"
@@ -271,13 +287,13 @@ const resetSuccess = () => {
                 <!-- Message -->
                 <v-col cols="12">
                   <label class="input-label" for="field-message">
-                    Project Details &amp; Message <span class="text-error">*</span>
+                    {{ t('contact.form.message') }} <span class="text-error">*</span>
                   </label>
                   <v-textarea
                     id="field-message"
                     v-model="formData.message"
                     :rules="[rules.required, rules.minLength(10)]"
-                    placeholder="Tell us about your project, timeline, technical requirements, or business objectives..."
+                    :placeholder="t('contact.form.messagePlaceholder')"
                     rows="4"
                     auto-grow
                     prepend-inner-icon="mdi-message-text-outline"
@@ -298,7 +314,7 @@ const resetSuccess = () => {
                     class="btn-shimmer font-weight-bold"
                     prepend-icon="mdi-send-outline"
                   >
-                    Send Message
+                    {{ isLoading ? t('contact.form.sending') : t('contact.form.sendBtn') }}
                   </v-btn>
                 </v-col>
 
@@ -306,7 +322,9 @@ const resetSuccess = () => {
                 <v-col cols="12" class="text-center">
                   <div class="text-caption text-medium-emphasis">
                     <v-icon icon="mdi-shield-lock-outline" size="14" class="mr-1" />
-                    Delivered securely to <strong>{{ siteConfig.email }}</strong>. Your information remains strictly confidential.
+                    {{ t('contact.form.confidentialityNotice') }}
+                    <strong class="ltr-text" dir="ltr">{{ siteConfig.email }}</strong>.
+                    {{ t('contact.form.confidentialityNoticeSuffix') }}
                   </div>
                 </v-col>
               </v-row>

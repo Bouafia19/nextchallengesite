@@ -1,5 +1,8 @@
 <script setup>
+import { useI18n } from 'vue-i18n'
 import { siteConfig } from '@/config/site.js'
+
+const { t } = useI18n()
 </script>
 
 <template>
@@ -9,13 +12,13 @@ import { siteConfig } from '@/config/site.js'
       <div class="text-center max-w-700 mx-auto mb-14">
         <span class="badge-pill mb-3">
           <v-icon icon="mdi-shield-star-outline" size="16" color="secondary" class="mr-1" />
-          The Next Challenge Advantage
+          {{ t('whyUs.badge') }}
         </span>
         <h2 class="text-h3 font-weight-bold mb-4 tracking-tight">
-          Why Choose Next Challenge?
+          {{ t('whyUs.title') }}
         </h2>
         <p class="text-h6 font-weight-regular text-medium-emphasis">
-          Strategic engineering, rigorous execution, and a partnership mindset dedicated to your success.
+          {{ t('whyUs.subtitle') }}
         </p>
       </div>
 
@@ -47,11 +50,11 @@ import { siteConfig } from '@/config/site.js'
             </div>
 
             <h3 class="text-h6 font-weight-bold mb-3 tracking-tight">
-              {{ pillar.title }}
+              {{ pillar.key ? t('whyUs.pillars.' + pillar.key + '.title') : pillar.title }}
             </h3>
 
             <p class="text-body-2 text-medium-emphasis line-height-relaxed flex-grow-1">
-              {{ pillar.description }}
+              {{ pillar.key ? t('whyUs.pillars.' + pillar.key + '.description') : pillar.description }}
             </p>
           </v-card>
         </v-col>

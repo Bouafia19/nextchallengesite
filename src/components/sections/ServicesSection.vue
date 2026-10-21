@@ -1,5 +1,10 @@
 <script setup>
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { siteConfig } from '@/config/site.js'
+
+const { t, tm, locale } = useI18n()
+const isRtl = computed(() => locale.value === 'ar')
 
 const scrollToContact = (serviceTitle) => {
   const target = document.querySelector('#contact')
@@ -20,13 +25,13 @@ const scrollToContact = (serviceTitle) => {
       <div class="text-center max-w-700 mx-auto mb-14">
         <span class="badge-pill mb-3">
           <v-icon icon="mdi-cogs" size="16" color="primary" class="mr-1" />
-          End-to-End Capabilities
+          {{ t('services.badge') }}
         </span>
         <h2 class="text-h3 font-weight-bold mb-4 tracking-tight">
-          Our Services
+          {{ t('services.title') }}
         </h2>
         <p class="text-h6 font-weight-regular text-medium-emphasis">
-          Technology solutions designed to help your business grow, automate, and operate smarter.
+          {{ t('services.subtitle') }}
         </p>
       </div>
 
@@ -43,6 +48,7 @@ const scrollToContact = (serviceTitle) => {
           <v-card
             class="nc-glass-card service-card pa-6 w-100 d-flex flex-column justify-space-between"
             rounded="xl"
+            @click="scrollToContact(t('services.items.' + service.key + '.title'))"
           >
             <!-- Card Top: Icon & Action -->
             <div>
@@ -58,7 +64,7 @@ const scrollToContact = (serviceTitle) => {
                   <v-icon :icon="service.icon" size="28" />
                 </div>
                 <v-icon
-                  icon="mdi-arrow-top-right"
+                  :icon="isRtl ? 'mdi-arrow-top-left' : 'mdi-arrow-top-right'"
                   size="20"
                   class="service-arrow text-medium-emphasis"
                 />
@@ -66,12 +72,12 @@ const scrollToContact = (serviceTitle) => {
 
               <!-- Title -->
               <h3 class="text-h6 font-weight-bold mb-3 service-title">
-                {{ service.title }}
+                {{ t('services.items.' + service.key + '.title') }}
               </h3>
 
               <!-- Description -->
               <p class="text-body-2 text-medium-emphasis line-height-relaxed mb-4">
-                {{ service.description }}
+                {{ t('services.items.' + service.key + '.description') }}
               </p>
             </div>
 
@@ -79,7 +85,7 @@ const scrollToContact = (serviceTitle) => {
             <div>
               <div class="d-flex flex-wrap ga-2 pt-2 border-t border-subtle">
                 <v-chip
-                  v-for="tag in service.tags"
+                  v-for="tag in tm('services.items.' + service.key + '.tags')"
                   :key="tag"
                   size="x-small"
                   variant="tonal"
@@ -95,10 +101,10 @@ const scrollToContact = (serviceTitle) => {
                   color="primary"
                   density="compact"
                   class="px-0 font-weight-semibold"
-                  append-icon="mdi-chevron-right"
-                  @click="scrollToContact(service.title)"
+                  :append-icon="isRtl ? 'mdi-chevron-left' : 'mdi-chevron-right'"
+                  @click.stop="scrollToContact(t('services.items.' + service.key + '.title'))"
                 >
-                  Inquire about this
+                  {{ t('services.actionBtn') }}
                 </v-btn>
               </div>
             </div>

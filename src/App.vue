@@ -1,5 +1,6 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import AppNavbar from './components/layout/AppNavbar.vue'
 import HeroSection from './components/sections/HeroSection.vue'
 import ServicesSection from './components/sections/ServicesSection.vue'
@@ -10,6 +11,7 @@ import AboutSection from './components/sections/AboutSection.vue'
 import ContactSection from './components/sections/ContactSection.vue'
 import AppFooter from './components/layout/AppFooter.vue'
 
+const { t } = useI18n()
 const showBackToTop = ref(false)
 
 const handleScroll = () => {
@@ -57,7 +59,7 @@ onUnmounted(() => {
         variant="elevated"
         size="large"
         class="back-to-top-btn"
-        aria-label="Back to top of page"
+        :aria-label="t('footer.backToTop')"
         elevation="6"
         @click="scrollToTop"
       />
@@ -79,5 +81,11 @@ onUnmounted(() => {
   z-index: 999;
   border-radius: 50% !important;
   box-shadow: 0 8px 24px rgba(91, 84, 232, 0.4) !important;
+}
+
+:deep([dir="rtl"]) .back-to-top-btn,
+:global([dir="rtl"] .back-to-top-btn) {
+  right: auto !important;
+  left: 24px !important;
 }
 </style>

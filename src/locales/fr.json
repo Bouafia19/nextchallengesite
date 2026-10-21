@@ -1,0 +1,320 @@
+{
+  "meta": {
+    "title": "Next Challenge | Développement Logiciel & Solutions Numériques",
+    "description": "Next Challenge conçoit des logiciels modernes, applications web et mobiles, solutions IA, ERP, e-commerce, API et cloud sur mesure à Sétif, Algérie.",
+    "ogLocale": "fr_FR"
+  },
+  "nav": {
+    "home": "Accueil",
+    "services": "Services",
+    "products": "Produits",
+    "capabilities": "Compétences",
+    "whyUs": "Pourquoi Nous",
+    "about": "À Propos",
+    "contact": "Contact",
+    "cta": "Échangeons",
+    "language": "Langue",
+    "themeLight": "Passer au mode clair",
+    "themeDark": "Passer au mode sombre",
+    "openMenu": "Ouvrir le menu de navigation",
+    "closeMenu": "Fermer le menu de navigation",
+    "directReach": "Contact Direct"
+  },
+  "hero": {
+    "locationBadge": "Next Challenge • Sétif, Algérie",
+    "titleBuild": "Bâtir.",
+    "titleInnovate": "Innover.",
+    "titleTransform": "Transformer.",
+    "subtitle": "Des solutions technologiques conçues autour de votre entreprise.",
+    "description": "Next Challenge développe des applications web modernes, des applications mobiles, des API, des plateformes ERP, des solutions e-commerce, des systèmes propulsés par l'IA et une infrastructure cloud adaptée aux exigences des entreprises modernes.",
+    "ctaContact": "Contactez-nous",
+    "ctaProducts": "Découvrir nos produits",
+    "trustTailored": "Architecture Sur Mesure",
+    "trustEnterprise": "Fiabilité Entreprise",
+    "trustLocation": "Basé à El Hidab, Sétif"
+  },
+  "services": {
+    "badge": "Compétences de Bout en Bout",
+    "title": "Nos Services",
+    "subtitle": "Des solutions technologiques conçues pour stimuler votre croissance, automatiser vos processus et optimiser votre gestion.",
+    "actionBtn": "Demander un devis",
+    "items": {
+      "maintenanceSupport": {
+        "title": "Maintenance & Support",
+        "description": "Gardez vos applications sécurisées, stables et continuellement améliorées grâce à nos contrats de suivi proactifs.",
+        "tags": ["Supervision 24/7", "Correctifs de Sécurité", "Optimisation des Performances"]
+      },
+      "biReporting": {
+        "title": "Business Intelligence & Reporting",
+        "description": "Transformez vos données brutes en indicateurs stratégiques exploitables grâce à des tableaux de bord interactifs.",
+        "tags": ["Tableaux de Bord Dirigeants", "Suivi des KPI", "Rapports Automatisés"]
+      },
+      "mobileAppDev": {
+        "title": "Développement d'Applications Mobiles",
+        "description": "Applications mobiles fluides et intuitives pour Android et iOS utilisant les technologies les plus modernes.",
+        "tags": ["iOS & Android", "Capacitor", "Fonctionnement Hors Ligne"]
+      },
+      "apiDevelopment": {
+        "title": "Développement & Intégration d'API",
+        "description": "Connectez vos logiciels avec des services tiers et vos systèmes internes de manière fluide et hautement sécurisée.",
+        "tags": ["REST & GraphQL", "Webhooks", "Microservices"]
+      },
+      "aiSolutions": {
+        "title": "Solutions d'Intelligence Artificielle",
+        "description": "Intégrez l'intelligence artificielle pour automatiser vos opérations complexes et décupler la productivité de vos équipes.",
+        "tags": ["Automatisation des Processus", "Intégration LLM", "Flux Intelligents"]
+      },
+      "devopsCloud": {
+        "title": "Solutions DevOps & Cloud",
+        "description": "Automatisez vos déploiements continus et garantissez une infrastructure cloud résiliente, hautement disponible et sécurisée.",
+        "tags": ["Pipelines CI/CD", "Docker & Kubernetes", "Déploiement Sans Interruption"]
+      },
+      "uiUxDesign": {
+        "title": "Conception UI/UX",
+        "description": "Interfaces modernes et centrées sur l'utilisateur, créées pour maximiser l'engagement, la fluidité et les conversions.",
+        "tags": ["Wireframing", "Systèmes de Design", "Prototypage Interactif"]
+      },
+      "ecommerce": {
+        "title": "Solutions E-Commerce",
+        "description": "Plateformes de vente en ligne complètes, robustes et optimisées, avec intégration fluide de passerelles de paiement.",
+        "tags": ["Paiement Sécurisé", "Synchronisation des Stocks", "Optimisation des Ventes"]
+      },
+      "erpDev": {
+        "title": "Développement d'ERP",
+        "description": "Progiciels de gestion intégrés personnalisés, façonnés avec précision selon les processus métiers spécifiques de votre entreprise.",
+        "tags": ["Modules Sur Mesure", "Multi-Dépôts", "Facturation Commerciale"]
+      },
+      "webAppDev": {
+        "title": "Développement d'Applications Web",
+        "description": "Nous concevons des applications web rapides, évolutives et sécurisées, parfaitement taillées pour soutenir votre croissance.",
+        "tags": ["Vue 3 & SPA", "Portails Entreprise", "Évolutivité Cloud"]
+      }
+    }
+  },
+  "products": {
+    "badge": "Ingénierie en Production",
+    "title": "Nos Produits & Projets",
+    "subtitle": "De véritables produits technologiques conçus, développés et déployés par Next Challenge.",
+    "liveDeployment": "Déploiement En Ligne",
+    "verifiedBuild": "Build Vérifié",
+    "renderProduction": "Production Render",
+    "items": {
+      "fleetora": {
+        "badge": "Mobilité & Logistique",
+        "category": "Plateforme de Gestion des Transports",
+        "tagline": "Plateforme Unifiée de Transport & Flottes de Transporteurs",
+        "description": "Une solution moderne de gestion de flotte et d'opérations de transport reliant clients, chauffeurs, véhicules et expéditions à travers une plateforme numérique intégrée.",
+        "buttonText": "Voir Fleetora",
+        "highlights": [
+          "Gestion complète des expéditions & dispatching",
+          "Portail de réservation expéditeur / client",
+          "Administration des partenaires de transport & flottes",
+          "Suivi en temps réel et automatisation tarifaire"
+        ]
+      },
+      "inventoryDemo": {
+        "badge": "Entreprise Commerciale",
+        "category": "Système de Gestion des Stocks & ERP",
+        "tagline": "Gestion Moderne des Stocks & Opérations Multi-Dépôts",
+        "description": "Une solution moderne de gestion d'inventaire conçue pour simplifier les opérations de stock, la facturation et le suivi commercial des entreprises.",
+        "buttonText": "Voir la Démo",
+        "highlights": [
+          "Grand livre de stock multi-dépôts & transferts",
+          "Facturation commerciale A4 & tickets de caisse POS",
+          "Conformité fiscale algérienne (TVA 19%/9% & Timbre)",
+          "Exécution autonome côté client & persistance hors ligne"
+        ]
+      },
+      "touriva": {
+        "badge": "Tourisme & Marketplace",
+        "category": "Plateforme Touristique & Voyages",
+        "tagline": "Plateforme Complète d'Expériences Touristiques",
+        "description": "Une plateforme touristique moderne conçue pour proposer des solutions numériques innovantes aux acteurs du voyage et du tourisme.",
+        "buttonText": "Explorer Touriva",
+        "highlights": [
+          "Découverte d'attractions & cartes interactives",
+          "Circuits guidés & réservation d'excursions",
+          "Place de marché intégrée pour produits artisanaux",
+          "Portails dédiés aux agences et prestataires partenaires"
+        ]
+      }
+    }
+  },
+  "capabilities": {
+    "badge": "Expertise Technique",
+    "title": "Compétences & Stack Technologique",
+    "subtitle": "Une pile d'ingénierie moderne propulsant des systèmes numériques résilients et hautement performants.",
+    "items": {
+      "web": {
+        "title": "Applications Web",
+        "subtitle": "Applications web monopages et progressives modernes"
+      },
+      "mobile": {
+        "title": "Applications Mobiles",
+        "subtitle": "Solutions mobiles multiplateformes avec expérience native"
+      },
+      "api": {
+        "title": "API REST & GraphQL",
+        "subtitle": "Microservices et passerelles sécurisés à haut débit"
+      },
+      "cloud": {
+        "title": "Infrastructure Cloud",
+        "subtitle": "Déploiements cloud résilients et haute disponibilité"
+      },
+      "database": {
+        "title": "Systèmes de Données",
+        "subtitle": "Modèles relationnels et NoSQL conçus pour l'échelle"
+      },
+      "ai": {
+        "title": "Intégration d'IA",
+        "subtitle": "Automatisation intelligente et modèles de langage avancés"
+      },
+      "bi": {
+        "title": "Business Intelligence",
+        "subtitle": "Analytique en temps réel, tableaux de bord et rapports"
+      },
+      "erp": {
+        "title": "Systèmes ERP",
+        "subtitle": "Logiciels de gestion des ressources d'entreprise sur mesure"
+      },
+      "ecommerce": {
+        "title": "E-Commerce",
+        "subtitle": "Boutiques numériques complètes et multi-vendeurs"
+      },
+      "devops": {
+        "title": "DevOps",
+        "subtitle": "Pipelines CI/CD automatisés & automatisation des versions"
+      },
+      "uiux": {
+        "title": "Design UI/UX",
+        "subtitle": "Systèmes de design conçus pour la clarté, le contraste et la vitesse"
+      }
+    }
+  },
+  "whyUs": {
+    "badge": "L'Avantage Next Challenge",
+    "title": "Pourquoi Choisir Next Challenge ?",
+    "subtitle": "Ingénierie stratégique, rigueur d'exécution et un véritable esprit de partenariat dédié à votre succès.",
+    "pillars": {
+      "businessFocused": {
+        "title": "Solutions Axées Métier",
+        "description": "Nous concevons la technologie autour des besoins réels de votre entreprise, plutôt que d'appliquer des solutions génériques."
+      },
+      "modernTech": {
+        "title": "Technologies Modernes",
+        "description": "Nous utilisons les technologies et pratiques d'ingénierie les plus avancées pour créer des applications performantes."
+      },
+      "scalableArch": {
+        "title": "Architecture Évolutive",
+        "description": "Nos architectures sont pensées dès le départ pour accompagner la croissance et l'expansion de votre activité."
+      },
+      "continuousSupport": {
+        "title": "Accompagnement Continu",
+        "description": "Nous assurons la maintenance, la surveillance proactive et l'évolution constante de vos applications après leur déploiement."
+      },
+      "endToEnd": {
+        "title": "Développement Intégral",
+        "description": "De la conception UX/UI et du code applicatif jusqu'aux API, au cloud, à la sécurité et au support technique."
+      },
+      "innovation": {
+        "title": "Innovation & IA",
+        "description": "Nous intégrons l'automatisation intelligente et l'IA pour permettre à votre organisation d'opérer avec plus d'agilité."
+      }
+    }
+  },
+  "about": {
+    "badge": "Profil de l'Entreprise",
+    "title": "À Propos de Next Challenge",
+    "lead": "Next Challenge est une entreprise technologique basée à <strong class=\"text-secondary\">El Hidab, Sétif, Algérie</strong>, dédiée à la conception de solutions numériques modernes pour les entreprises.",
+    "story": "Nous collaborons avec des entreprises ambitieuses, des startups et des organisations pour concevoir des logiciels sur mesure qui répondent à des défis opérationnels concrets. Notre priorité réside dans des architectures fiables, un code propre, des interfaces intuitives et des systèmes solides qui permettent d'automatiser les processus et de servir vos clients avec une totale confiance.",
+    "specializationsTitle": "Principales Spécialisations Techniques",
+    "specializations": [
+      "Développement Web",
+      "Développement Mobile",
+      "Logiciels Entreprise",
+      "Plateformes ERP",
+      "API REST & GraphQL",
+      "Intégration de l'IA",
+      "Infrastructure Cloud",
+      "Automatisation DevOps",
+      "Business Intelligence",
+      "Solutions E-Commerce",
+      "Design UI/UX"
+    ],
+    "headquarters": "Siège Social",
+    "directPhone": "Téléphone Direct",
+    "officialEmail": "Email Officiel",
+    "primaryDomain": "Domaine Officiel",
+    "available": "Disponible Dimanche – Jeudi",
+    "rapidResponse": "Réponse sous 24h ouvrées",
+    "scheduleConsultation": "Planifier une Consultation"
+  },
+  "contact": {
+    "badge": "Demandes Directes",
+    "title": "Bâtissons Ensemble Votre Prochain Projet",
+    "subtitle": "Vous avez un projet ou besoin d'un conseil technique ? Envoyez-nous un message et notre équipe d'ingénieurs vous répondra rapidement.",
+    "form": {
+      "fullName": "Nom Complet",
+      "fullNamePlaceholder": "Ex. Mohamed Amine / Jean Dupont",
+      "email": "Adresse Email",
+      "emailPlaceholder": "nom{'@'}entreprise.com",
+      "phone": "Numéro de Téléphone",
+      "phonePlaceholder": "Ex. 0552 56 96 54 / +213 ...",
+      "company": "Entreprise / Organisation",
+      "companyPlaceholder": "Ex. Entreprise SARL",
+      "subject": "Objet / Domaine d'Intérêt",
+      "subjectPlaceholder": "Sélectionnez ou saisissez votre sujet",
+      "message": "Détails du Projet & Message",
+      "messagePlaceholder": "Parlez-nous de vos besoins, délais, spécifications techniques ou objectifs métiers...",
+      "sendBtn": "Envoyer le Message",
+      "sending": "Envoi en cours...",
+      "confidentialityNotice": "Transmis de manière sécurisée à",
+      "confidentialityNoticeSuffix": "Vos données restent strictement confidentielles."
+    },
+    "subjects": [
+      "Développement d'Applications Web Sur Mesure",
+      "Développement Mobile (iOS / Android)",
+      "Plateforme ERP & Gestion des Stocks",
+      "Solutions d'IA & Automatisation",
+      "Intégration d'API & Microservices",
+      "Infrastructure Cloud & DevOps",
+      "Maintenance & Contrat de Support SLA",
+      "Consultation Générale / Autre Demande"
+    ],
+    "validation": {
+      "required": "Ce champ est obligatoire",
+      "email": "Veuillez entrer une adresse email valide",
+      "minLength": "Doit contenir au moins {min} caractères"
+    },
+    "alerts": {
+      "successTitle": "Message Envoyé avec Succès !",
+      "successBody": "Merci pour votre prise de contact. Votre message a bien été transmis à {email}. Notre équipe à Sétif étudiera votre demande et vous recontactera très rapidement.",
+      "sendAnother": "Envoyer un Autre Message",
+      "errorTitle": "Erreur lors de l'envoi",
+      "fallbackNotice": "Vous pouvez également nous joindre directement par email à",
+      "orCall": "ou par téléphone au",
+      "smtpUnavailable": "Le service de messagerie est actuellement en attente de configuration SMTP. Veuillez nous contacter directement par email à {email} ou par téléphone au {phone}."
+    }
+  },
+  "footer": {
+    "tagline": "Conception de solutions numériques modernes pour les entreprises.",
+    "navTitle": "Navigation",
+    "servicesTitle": "Services",
+    "contactTitle": "Contact",
+    "allRightsReserved": "Tous droits réservés.",
+    "backToTop": "Haut de page",
+    "servicesList": [
+      "Applications Web",
+      "Applications Mobiles",
+      "Solutions IA",
+      "Développement ERP",
+      "E-Commerce",
+      "Développement d'API",
+      "Cloud & DevOps"
+    ]
+  },
+  "common": {
+    "algeria": "Algérie",
+    "setif": "Sétif"
+  }
+}

@@ -1,5 +1,10 @@
 <script setup>
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { siteConfig } from '@/config/site.js'
+
+const { t, tm, locale } = useI18n()
+const isRtl = computed(() => locale.value === 'ar')
 </script>
 
 <template>
@@ -9,13 +14,13 @@ import { siteConfig } from '@/config/site.js'
       <div class="text-center max-w-700 mx-auto mb-14">
         <span class="badge-pill mb-3">
           <v-icon icon="mdi-rocket-launch-outline" size="16" color="secondary" class="mr-1" />
-          Production Engineering
+          {{ t('products.badge') }}
         </span>
         <h2 class="text-h3 font-weight-bold mb-4 tracking-tight">
-          Our Products &amp; Projects
+          {{ t('products.title') }}
         </h2>
         <p class="text-h6 font-weight-regular text-medium-emphasis">
-          Real technology products developed by Next Challenge.
+          {{ t('products.subtitle') }}
         </p>
       </div>
 
@@ -46,10 +51,10 @@ import { siteConfig } from '@/config/site.js'
                   class="text-black font-weight-bold"
                 >
                   <span class="pulsing-dot mr-1"></span>
-                  Live Deployment
+                  {{ t('products.liveDeployment') }}
                 </v-chip>
                 <div class="product-badge text-caption text-white font-weight-bold">
-                  {{ product.badge }}
+                  {{ t('products.items.' + product.key + '.badge') }}
                 </div>
               </div>
 
@@ -60,14 +65,14 @@ import { siteConfig } from '@/config/site.js'
                   {{ product.name }}
                 </div>
                 <div class="text-caption text-white opacity-80 font-weight-medium">
-                  {{ product.category }}
+                  {{ t('products.items.' + product.key + '.category') }}
                 </div>
               </div>
 
               <!-- Micro Status -->
               <div class="d-flex align-center justify-space-between text-caption text-white opacity-90 mono-font">
-                <span>Verified Build</span>
-                <span>Render Production</span>
+                <span>{{ t('products.verifiedBuild') }}</span>
+                <span>{{ t('products.renderProduction') }}</span>
               </div>
             </div>
 
@@ -76,18 +81,18 @@ import { siteConfig } from '@/config/site.js'
               <div>
                 <!-- Tagline -->
                 <div class="text-subtitle-2 font-weight-bold text-primary mb-2">
-                  {{ product.tagline }}
+                  {{ t('products.items.' + product.key + '.tagline') }}
                 </div>
 
                 <!-- Main Description -->
                 <p class="text-body-2 text-medium-emphasis mb-5 line-height-relaxed">
-                  {{ product.description }}
+                  {{ t('products.items.' + product.key + '.description') }}
                 </p>
 
                 <!-- Key Highlights -->
                 <div class="mb-5">
                   <div
-                    v-for="(highlight, idx) in product.highlights"
+                    v-for="(highlight, idx) in tm('products.items.' + product.key + '.highlights')"
                     :key="idx"
                     class="d-flex align-start ga-2 mb-2"
                   >
@@ -130,7 +135,7 @@ import { siteConfig } from '@/config/site.js'
                   class="font-weight-bold btn-shimmer"
                   append-icon="mdi-open-in-new"
                 >
-                  {{ product.buttonText }}
+                  {{ t('products.items.' + product.key + '.buttonText') }}
                 </v-btn>
               </div>
             </div>

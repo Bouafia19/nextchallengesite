@@ -1,6 +1,10 @@
 <script setup>
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import TechVisualGraphic from '../ui/TechVisualGraphic.vue'
-import { siteConfig } from '@/config/site.js'
+
+const { t, locale } = useI18n()
+const isRtl = computed(() => locale.value === 'ar')
 
 const scrollTo = (href) => {
   const target = document.querySelector(href)
@@ -15,30 +19,30 @@ const scrollTo = (href) => {
     <v-container class="py-10 py-md-14">
       <v-row align="center" class="gy-8">
         <!-- Left Hero Content -->
-        <v-col cols="12" lg="6" class="text-left">
+        <v-col cols="12" lg="6" :class="isRtl ? 'text-right' : 'text-left'">
           <!-- Eyebrow Badge -->
           <div class="mb-5">
             <span class="badge-pill">
               <span class="pulsing-dot"></span>
-              <span>Next Challenge &bull; Sétif, Algeria</span>
+              <span>{{ t('hero.locationBadge') }}</span>
             </span>
           </div>
 
           <!-- Main Headline -->
           <h1 class="hero-title mb-4">
-            <span>Build.</span>
-            <span class="text-gradient mx-2">Innovate.</span>
-            <span>Transform.</span>
+            <span>{{ t('hero.titleBuild') }}</span>
+            <span class="text-gradient mx-2">{{ t('hero.titleInnovate') }}</span>
+            <span>{{ t('hero.titleTransform') }}</span>
           </h1>
 
           <!-- Subtitle -->
           <h2 class="hero-subtitle mb-6 text-high-emphasis">
-            {{ siteConfig.subTagline }}
+            {{ t('hero.subtitle') }}
           </h2>
 
           <!-- Description Paragraph -->
           <p class="hero-description mb-8 text-medium-emphasis">
-            {{ siteConfig.heroDescription }}
+            {{ t('hero.description') }}
           </p>
 
           <!-- CTAs -->
@@ -52,7 +56,7 @@ const scrollTo = (href) => {
               prepend-icon="mdi-email-fast-outline"
               @click="scrollTo('#contact')"
             >
-              Contact Us
+              {{ t('hero.ctaContact') }}
             </v-btn>
 
             <!-- Secondary CTA -->
@@ -61,10 +65,10 @@ const scrollTo = (href) => {
               color="secondary"
               size="x-large"
               class="font-weight-bold px-7"
-              append-icon="mdi-arrow-right"
+              :append-icon="isRtl ? 'mdi-arrow-left' : 'mdi-arrow-right'"
               @click="scrollTo('#products')"
             >
-              Explore Our Products
+              {{ t('hero.ctaProducts') }}
             </v-btn>
           </div>
 
@@ -73,26 +77,26 @@ const scrollTo = (href) => {
             <div class="d-flex align-center ga-2">
               <v-icon icon="mdi-code-json" size="20" color="primary" />
               <span class="text-caption font-weight-semibold text-medium-emphasis">
-                Tailored Architecture
+                {{ t('hero.trustTailored') }}
               </span>
             </div>
             <div class="d-flex align-center ga-2">
               <v-icon icon="mdi-shield-check-outline" size="20" color="secondary" />
               <span class="text-caption font-weight-semibold text-medium-emphasis">
-                Enterprise Reliability
+                {{ t('hero.trustEnterprise') }}
               </span>
             </div>
             <div class="d-flex align-center ga-2">
               <v-icon icon="mdi-map-marker-radius-outline" size="20" color="info" />
               <span class="text-caption font-weight-semibold text-medium-emphasis">
-                Based in El Hidab, Sétif
+                {{ t('hero.trustLocation') }}
               </span>
             </div>
           </div>
         </v-col>
 
         <!-- Right Hero Visual Graphic -->
-        <v-col cols="12" lg="6" class="d-flex justify-center justify-lg-end">
+        <v-col cols="12" lg="6" class="d-flex justify-center justify-lg-end" dir="ltr">
           <TechVisualGraphic />
         </v-col>
       </v-row>

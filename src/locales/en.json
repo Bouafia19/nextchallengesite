@@ -1,0 +1,320 @@
+{
+  "meta": {
+    "title": "Next Challenge | Software Development & Digital Solutions",
+    "description": "Next Challenge provides modern software development, web and mobile applications, AI solutions, ERP, e-commerce, APIs, cloud, DevOps, and digital solutions in Sétif, Algeria.",
+    "ogLocale": "en_US"
+  },
+  "nav": {
+    "home": "Home",
+    "services": "Services",
+    "products": "Products",
+    "capabilities": "Capabilities",
+    "whyUs": "Why Us",
+    "about": "About Us",
+    "contact": "Contact",
+    "cta": "Let's Talk",
+    "language": "Language",
+    "themeLight": "Switch to light mode",
+    "themeDark": "Switch to dark mode",
+    "openMenu": "Open navigation menu",
+    "closeMenu": "Close navigation menu",
+    "directReach": "Direct Reach"
+  },
+  "hero": {
+    "locationBadge": "Next Challenge • Sétif, Algeria",
+    "titleBuild": "Build.",
+    "titleInnovate": "Innovate.",
+    "titleTransform": "Transform.",
+    "subtitle": "Technology solutions built around your business.",
+    "description": "Next Challenge develops modern web applications, mobile apps, APIs, ERP platforms, e-commerce solutions, AI-powered systems, and cloud infrastructure tailored to the needs of modern businesses.",
+    "ctaContact": "Contact Us",
+    "ctaProducts": "Explore Our Products",
+    "trustTailored": "Tailored Architecture",
+    "trustEnterprise": "Enterprise Reliability",
+    "trustLocation": "Based in El Hidab, Sétif"
+  },
+  "services": {
+    "badge": "End-to-End Capabilities",
+    "title": "Our Services",
+    "subtitle": "Technology solutions designed to help your business grow, automate, and operate smarter.",
+    "actionBtn": "Request consultation",
+    "items": {
+      "maintenanceSupport": {
+        "title": "Maintenance & Support",
+        "description": "Keep your applications secure, stable, and continuously improving with our proactive maintenance SLAs.",
+        "tags": ["24/7 Monitoring", "Security Patches", "Performance Tuning"]
+      },
+      "biReporting": {
+        "title": "Business Intelligence & Reporting",
+        "description": "Transform your raw enterprise data into actionable strategic insights with interactive executive dashboards.",
+        "tags": ["Executive Dashboards", "KPI Tracking", "Automated Reports"]
+      },
+      "mobileAppDev": {
+        "title": "Mobile App Development",
+        "description": "Native-like, intuitive mobile applications for Android and iOS engineered using modern frameworks.",
+        "tags": ["iOS & Android", "Capacitor", "Offline First"]
+      },
+      "apiDevelopment": {
+        "title": "API Development & Integration",
+        "description": "Connect your software with third-party services and internal systems smoothly, securely, and reliably.",
+        "tags": ["REST & GraphQL", "Webhooks", "Microservices"]
+      },
+      "aiSolutions": {
+        "title": "AI Solutions",
+        "description": "Integrate artificial intelligence into your business to automate complex processes and elevate team productivity.",
+        "tags": ["Process Automation", "LLM Integration", "Smart Workflows"]
+      },
+      "devopsCloud": {
+        "title": "DevOps & Cloud Solutions",
+        "description": "Automate deployment workflows and guarantee reliable, fault-tolerant, scalable cloud infrastructure.",
+        "tags": ["CI/CD Pipelines", "Docker & Kubernetes", "Zero-Downtime Deploy"]
+      },
+      "uiUxDesign": {
+        "title": "UI/UX Design",
+        "description": "Modern, user-centered digital interfaces crafted to boost user engagement, clarity, and conversion rates.",
+        "tags": ["Wireframing", "Design Systems", "Interactive Prototyping"]
+      },
+      "ecommerce": {
+        "title": "E-Commerce Solutions",
+        "description": "Complete, resilient online storefronts with seamless digital payment gateway integration.",
+        "tags": ["Payment Gateways", "Inventory Sync", "Conversion Optimized"]
+      },
+      "erpDev": {
+        "title": "ERP Development",
+        "description": "Custom Enterprise Resource Planning systems tailored around your specific operational workflows.",
+        "tags": ["Custom Modules", "Multi-Warehouse", "Commercial Invoicing"]
+      },
+      "webAppDev": {
+        "title": "Web Application Development",
+        "description": "We build fast, secure, and scalable web applications tailored to your evolving business requirements.",
+        "tags": ["Vue 3 & SPA", "Enterprise Portals", "Cloud Scale"]
+      }
+    }
+  },
+  "products": {
+    "badge": "Production Engineering",
+    "title": "Our Products & Projects",
+    "subtitle": "Real technology products engineered and deployed by Next Challenge.",
+    "liveDeployment": "Live Deployment",
+    "verifiedBuild": "Verified Build",
+    "renderProduction": "Render Production",
+    "items": {
+      "fleetora": {
+        "badge": "Mobility & Logistics",
+        "category": "Transportation Management Platform",
+        "tagline": "Unified Transportation & Carrier Fleet Platform",
+        "description": "A modern fleet and transportation management solution designed to connect customers, drivers, vehicles, and transportation operations through a unified digital platform.",
+        "buttonText": "View Fleetora",
+        "highlights": [
+          "End-to-end trip & dispatch management",
+          "Customer shipper booking portal",
+          "Fleet partner & transporter administration",
+          "Live tracking and tariff automation"
+        ]
+      },
+      "inventoryDemo": {
+        "badge": "Commercial Enterprise",
+        "category": "Inventory & ERP System",
+        "tagline": "Modern Stock & Multi-Warehouse Operations",
+        "description": "A modern inventory management solution designed to simplify product, stock, and business inventory operations.",
+        "buttonText": "View Demo",
+        "highlights": [
+          "Multi-depot stock ledger & transfer tracking",
+          "Commercial A4 Invoices & POS thermal receipts",
+          "Algerian fiscal compliance (TVA 19%/9% & Timbre)",
+          "Standalone client-side execution & offline persistence"
+        ]
+      },
+      "touriva": {
+        "badge": "Tourism & Marketplace",
+        "category": "Travel & Tourism Platform",
+        "tagline": "Comprehensive Tourism Experience Platform",
+        "description": "A modern tourism and travel platform designed to provide digital solutions for tourism and travel-related services.",
+        "buttonText": "Explore Touriva",
+        "highlights": [
+          "Attraction discovery & interactive maps",
+          "Guided excursion itineraries & booking",
+          "Integrated artisan merchandise marketplace",
+          "Dedicated agency & merchant vendor portals"
+        ]
+      }
+    }
+  },
+  "capabilities": {
+    "badge": "Technical Expertise",
+    "title": "Capabilities & Technology Stack",
+    "subtitle": "Modern engineering stack powering high-performance, fault-tolerant digital systems.",
+    "items": {
+      "web": {
+        "title": "Web Applications",
+        "subtitle": "Modern Single Page & Progressive Web Applications"
+      },
+      "mobile": {
+        "title": "Mobile Applications",
+        "subtitle": "Cross-platform native-feeling mobile solutions"
+      },
+      "api": {
+        "title": "REST APIs",
+        "subtitle": "Secure, high-throughput microservices and gateways"
+      },
+      "cloud": {
+        "title": "Cloud Infrastructure",
+        "subtitle": "Resilient and highly available cloud deployments"
+      },
+      "database": {
+        "title": "Database Systems",
+        "subtitle": "Relational & document data models built for scale"
+      },
+      "ai": {
+        "title": "AI Integration",
+        "subtitle": "Intelligent automation and large language model tooling"
+      },
+      "bi": {
+        "title": "Business Intelligence",
+        "subtitle": "Real-time analytics, dashboards, and reporting pipelines"
+      },
+      "erp": {
+        "title": "ERP Systems",
+        "subtitle": "Tailored enterprise resource management software"
+      },
+      "ecommerce": {
+        "title": "E-Commerce",
+        "subtitle": "End-to-end multi-tenant digital storefronts"
+      },
+      "devops": {
+        "title": "DevOps",
+        "subtitle": "Automated CI/CD pipelines & release automation"
+      },
+      "uiux": {
+        "title": "UI/UX Design",
+        "subtitle": "Design systems crafted for clarity, contrast, and speed"
+      }
+    }
+  },
+  "whyUs": {
+    "badge": "The Next Challenge Advantage",
+    "title": "Why Choose Next Challenge?",
+    "subtitle": "Strategic engineering, rigorous execution, and a partnership mindset dedicated to your success.",
+    "pillars": {
+      "businessFocused": {
+        "title": "Business-Focused Solutions",
+        "description": "We build technology around real business needs rather than generic solutions."
+      },
+      "modernTech": {
+        "title": "Modern Technology",
+        "description": "We use modern technologies and development practices to create scalable applications."
+      },
+      "scalableArch": {
+        "title": "Scalable Architecture",
+        "description": "Our solutions are designed to grow with your business."
+      },
+      "continuousSupport": {
+        "title": "Continuous Support",
+        "description": "We can maintain, improve, and evolve applications after deployment."
+      },
+      "endToEnd": {
+        "title": "End-to-End Development",
+        "description": "From UI/UX and development to APIs, deployment, cloud infrastructure, and support."
+      },
+      "innovation": {
+        "title": "Innovation",
+        "description": "We use modern technologies including AI and automation to help businesses work smarter."
+      }
+    }
+  },
+  "about": {
+    "badge": "Company Profile",
+    "title": "About Next Challenge",
+    "lead": "Next Challenge is a technology company based in <strong class=\"text-secondary\">El Hidab, Sétif, Algeria</strong>, focused on building modern digital solutions for businesses.",
+    "story": "We partner with forward-thinking enterprises, startups, and institutions to engineer tailored software that solves tangible operational problems. Our focus is on scalable architectures, clean codebases, intuitive interfaces, and robust systems that empower organizations to automate workflows and serve their customers with confidence.",
+    "specializationsTitle": "Core Technical Specializations",
+    "specializations": [
+      "Web Development",
+      "Mobile Development",
+      "Enterprise Software",
+      "ERP Platforms",
+      "REST & GraphQL APIs",
+      "AI Integration",
+      "Cloud Infrastructure",
+      "DevOps Automation",
+      "Business Intelligence",
+      "E-Commerce Solutions",
+      "UI/UX Design"
+    ],
+    "headquarters": "Headquarters",
+    "directPhone": "Direct Telephone",
+    "officialEmail": "Official Email",
+    "primaryDomain": "Primary Domain",
+    "available": "Available Sun – Thu",
+    "rapidResponse": "Inquiries answered promptly",
+    "scheduleConsultation": "Schedule a Consultation"
+  },
+  "contact": {
+    "badge": "Direct Inquiries",
+    "title": "Let's Build Something Great Together",
+    "subtitle": "Have an upcoming project or need enterprise consultation? Send us a direct message and our engineering team will respond promptly.",
+    "form": {
+      "fullName": "Full Name",
+      "fullNamePlaceholder": "e.g. John Doe / Mohamed Amine",
+      "email": "Email Address",
+      "emailPlaceholder": "name{'@'}company.com",
+      "phone": "Phone Number",
+      "phonePlaceholder": "e.g. 0552 56 96 54 / +213 ...",
+      "company": "Company / Organization",
+      "companyPlaceholder": "e.g. Enterprise SARL",
+      "subject": "Subject / Area of Interest",
+      "subjectPlaceholder": "Select or type your subject",
+      "message": "Project Details & Message",
+      "messagePlaceholder": "Tell us about your project, timeline, technical requirements, or business objectives...",
+      "sendBtn": "Send Message",
+      "sending": "Sending message...",
+      "confidentialityNotice": "Delivered securely to",
+      "confidentialityNoticeSuffix": "Your information remains strictly confidential."
+    },
+    "subjects": [
+      "Custom Web Application Development",
+      "Mobile App Development (iOS/Android)",
+      "Enterprise ERP & Inventory Platform",
+      "AI Solutions & Automation",
+      "API Integration & Microservices",
+      "Cloud Infrastructure & DevOps",
+      "Maintenance & SLA Support",
+      "General Consultation / Other"
+    ],
+    "validation": {
+      "required": "This field is required",
+      "email": "Please enter a valid email address",
+      "minLength": "Must be at least {min} characters"
+    },
+    "alerts": {
+      "successTitle": "Message Sent Successfully!",
+      "successBody": "Thank you for reaching out. Your message has been delivered to {email}. Our team in Sétif will review your project requirements and get back to you shortly.",
+      "sendAnother": "Send Another Message",
+      "errorTitle": "Message Delivery Error",
+      "fallbackNotice": "You can also email us directly at",
+      "orCall": "or call",
+      "smtpUnavailable": "Email service is currently awaiting SMTP configuration. Please reach us directly at {email} or call {phone}."
+    }
+  },
+  "footer": {
+    "tagline": "Building modern digital solutions for businesses.",
+    "navTitle": "Navigation",
+    "servicesTitle": "Services",
+    "contactTitle": "Contact",
+    "allRightsReserved": "All rights reserved.",
+    "backToTop": "Back to top of page",
+    "servicesList": [
+      "Web Applications",
+      "Mobile Applications",
+      "AI Solutions",
+      "ERP Development",
+      "E-Commerce",
+      "API Development",
+      "Cloud & DevOps"
+    ]
+  },
+  "common": {
+    "algeria": "Algeria",
+    "setif": "Sétif"
+  }
+}

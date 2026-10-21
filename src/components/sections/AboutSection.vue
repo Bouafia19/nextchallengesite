@@ -1,19 +1,10 @@
 <script setup>
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { siteConfig } from '@/config/site.js'
 
-const specializations = [
-  'Web Development',
-  'Mobile Development',
-  'Enterprise Software',
-  'ERP Platforms',
-  'REST & GraphQL APIs',
-  'AI Integration',
-  'Cloud Infrastructure',
-  'DevOps Automation',
-  'Business Intelligence',
-  'E-Commerce Solutions',
-  'UI/UX Design'
-]
+const { t, tm, locale } = useI18n()
+const isRtl = computed(() => locale.value === 'ar')
 </script>
 
 <template>
@@ -24,35 +15,34 @@ const specializations = [
         <v-col cols="12" lg="7">
           <span class="badge-pill mb-3">
             <v-icon icon="mdi-office-building-marker-outline" size="16" color="primary" class="mr-1" />
-            Company Profile
+            {{ t('about.badge') }}
           </span>
           <h2 class="text-h3 font-weight-bold mb-5 tracking-tight">
-            About Next Challenge
+            {{ t('about.title') }}
           </h2>
-          <p class="text-body-1 text-high-emphasis font-weight-medium line-height-relaxed mb-4">
-            Next Challenge is a technology company based in
-            <strong class="text-secondary">El Hidab, Sétif, Algeria</strong>,
-            focused on building modern digital solutions for businesses.
-          </p>
+          <p
+            class="text-body-1 text-high-emphasis font-weight-medium line-height-relaxed mb-4"
+            v-html="t('about.lead')"
+          ></p>
           <p class="text-body-2 text-medium-emphasis line-height-relaxed mb-6">
-            We partner with forward-thinking enterprises, startups, and institutions to engineer tailored software that solves tangible operational problems. Our focus is on scalable architectures, clean codebases, intuitive interfaces, and robust systems that empower organizations to automate workflows and serve their customers with confidence.
+            {{ t('about.story') }}
           </p>
 
           <!-- Core Specializations Chips -->
           <div class="mb-6">
             <div class="text-caption font-weight-bold text-uppercase text-medium-emphasis mb-3 letter-spacing-1">
-              Core Technical Specializations
+              {{ t('about.specializationsTitle') }}
             </div>
             <div class="d-flex flex-wrap ga-2">
               <v-chip
-                v-for="item in specializations"
+                v-for="item in tm('about.specializations')"
                 :key="item"
                 variant="outlined"
                 color="primary"
                 size="small"
                 class="font-weight-medium"
               >
-                <v-icon icon="mdi-check" size="14" class="mr-1" />
+                <v-icon icon="mdi-check" size="14" :class="isRtl ? 'ml-1' : 'mr-1'" />
                 {{ item }}
               </v-chip>
             </div>
@@ -70,7 +60,7 @@ const specializations = [
                 <h3 class="text-h6 font-weight-bold tracking-tight">
                   {{ siteConfig.name }}
                 </h3>
-                <div class="text-caption text-medium-emphasis font-weight-medium mono-font">
+                <div class="text-caption text-medium-emphasis font-weight-medium mono-font" dir="ltr">
                   {{ siteConfig.legalName }}
                 </div>
               </div>
@@ -84,7 +74,9 @@ const specializations = [
                   <v-icon icon="mdi-map-marker-outline" size="20" color="primary" />
                 </div>
                 <div>
-                  <div class="text-caption text-medium-emphasis font-weight-semibold">Headquarters</div>
+                  <div class="text-caption text-medium-emphasis font-weight-semibold">
+                    {{ t('about.headquarters') }}
+                  </div>
                   <div class="text-body-2 font-weight-bold text-high-emphasis">
                     📍 {{ siteConfig.location }}
                   </div>
@@ -97,10 +89,13 @@ const specializations = [
                   <v-icon icon="mdi-phone-outline" size="20" color="primary" />
                 </div>
                 <div>
-                  <div class="text-caption text-medium-emphasis font-weight-semibold">Direct Telephone</div>
+                  <div class="text-caption text-medium-emphasis font-weight-semibold">
+                    {{ t('about.directPhone') }}
+                  </div>
                   <a
                     :href="siteConfig.phoneTel"
-                    class="text-body-1 font-weight-bold text-secondary text-decoration-none hover-underline"
+                    class="text-body-1 font-weight-bold text-secondary text-decoration-none hover-underline ltr-text"
+                    dir="ltr"
                   >
                     📞 {{ siteConfig.phone }}
                   </a>
@@ -113,10 +108,13 @@ const specializations = [
                   <v-icon icon="mdi-email-outline" size="20" color="primary" />
                 </div>
                 <div>
-                  <div class="text-caption text-medium-emphasis font-weight-semibold">Official Inquiries</div>
+                  <div class="text-caption text-medium-emphasis font-weight-semibold">
+                    {{ t('about.officialEmail') }}
+                  </div>
                   <a
                     :href="siteConfig.emailMailto"
-                    class="text-body-1 font-weight-bold text-secondary text-decoration-none hover-underline text-break"
+                    class="text-body-1 font-weight-bold text-secondary text-decoration-none hover-underline text-break ltr-text"
+                    dir="ltr"
                   >
                     ✉️ {{ siteConfig.email }}
                   </a>
@@ -129,12 +127,15 @@ const specializations = [
                   <v-icon icon="mdi-web" size="20" color="primary" />
                 </div>
                 <div>
-                  <div class="text-caption text-medium-emphasis font-weight-semibold">Production Domain</div>
+                  <div class="text-caption text-medium-emphasis font-weight-semibold">
+                    {{ t('about.primaryDomain') }}
+                  </div>
                   <a
                     :href="siteConfig.siteUrl"
                     target="_blank"
                     rel="noopener noreferrer"
-                    class="text-body-2 font-weight-bold text-high-emphasis text-decoration-none mono-font"
+                    class="text-body-2 font-weight-bold text-high-emphasis text-decoration-none mono-font ltr-text"
+                    dir="ltr"
                   >
                     🌐 {{ siteConfig.domain }}
                   </a>
@@ -152,7 +153,7 @@ const specializations = [
                 href="#contact"
                 prepend-icon="mdi-send-outline"
               >
-                Schedule a Consultation
+                {{ t('about.scheduleConsultation') }}
               </v-btn>
             </div>
           </v-card>

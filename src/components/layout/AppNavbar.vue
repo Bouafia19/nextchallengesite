@@ -1,12 +1,18 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useTheme } from 'vuetify'
+import { useI18n } from 'vue-i18n'
 import BrandLogo from './BrandLogo.vue'
+import LanguageSelector from '../ui/LanguageSelector.vue'
 import { siteConfig } from '@/config/site.js'
 
 const theme = useTheme()
+const { t, locale } = useI18n()
 const isScrolled = ref(false)
 const drawer = ref(false)
+
+const isRtl = computed(() => locale.value === 'ar')
+const drawerLocation = computed(() => isRtl.value ? 'left' : 'right')
 
 const toggleTheme = () => {
   theme.global.name.value =
@@ -48,25 +54,28 @@ const navigateTo = (href) => {
       <nav class="d-none d-md-flex align-center ga-1" aria-label="Main Navigation">
         <v-btn
           v-for="item in siteConfig.navLinks"
-          :key="item.label"
+          :key="item.key"
           :href="item.href"
           variant="text"
           class="nav-link font-weight-medium px-3"
           size="default"
           @click.prevent="navigateTo(item.href)"
         >
-          {{ item.label }}
+          {{ t('nav.' + item.key) }}
         </v-btn>
       </nav>
 
       <!-- Desktop Action Buttons -->
       <div class="d-none d-md-flex align-center ga-3">
+        <!-- Language Selector -->
+        <LanguageSelector variant="menu" />
+
         <!-- Theme Toggle -->
         <v-btn
           icon
           variant="text"
           density="comfortable"
-          :aria-label="theme.global.current.value.dark ? 'Switch to light mode' : 'Switch to dark mode'"
+          :aria-label="theme.global.current.value.dark ? t('nav.themeLight') : t('nav.themeDark')"
           @click="toggleTheme"
         >
           <v-icon
@@ -85,17 +94,19 @@ const navigateTo = (href) => {
           prepend-icon="mdi-chat-processing-outline"
           @click.prevent="navigateTo('#contact')"
         >
-          Let's Talk
+          {{ t('nav.cta') }}
         </v-btn>
       </div>
 
-      <!-- Mobile Controls (Theme Toggle + Drawer Hamburger) -->
+      <!-- Mobile Controls (Language + Theme Toggle + Drawer Hamburger) -->
       <div class="d-flex d-md-none align-center ga-1">
+        <LanguageSelector variant="menu" />
+
         <v-btn
           icon
           variant="text"
           density="comfortable"
-          :aria-label="theme.global.current.value.dark ? 'Switch to light mode' : 'Switch to dark mode'"
+          :aria-label="theme.global.current.value.dark ? t('nav.themeLight') : t('nav.themeDark')"
           @click="toggleTheme"
         >
           <v-icon
@@ -108,7 +119,7 @@ const navigateTo = (href) => {
           icon
           variant="text"
           density="comfortable"
-          aria-label="Open navigation menu"
+          :aria-label="t('nav.openMenu')"
           @click="drawer = !drawer"
         >
           <v-icon icon="mdi-menu" size="26" />
@@ -120,7 +131,7 @@ const navigateTo = (href) => {
   <!-- Mobile Responsive Navigation Drawer -->
   <v-navigation-drawer
     v-model="drawer"
-    location="right"
+    :location="drawerLocation"
     temporary
     width="320"
     class="mobile-drawer"
@@ -128,23 +139,28 @@ const navigateTo = (href) => {
     <div class="pa-5 d-flex flex-column h-100 justify-space-between">
       <div>
         <!-- Drawer Header -->
-        <div class="d-flex align-center justify-space-between mb-6 pb-3 border-b">
+        <div class="d-flex align-center justify-space-between mb-4 pb-3 border-b">
           <BrandLogo :size="32" @click="drawer = false" />
           <v-btn
             icon="mdi-close"
             variant="text"
             density="comfortable"
-            aria-label="Close navigation menu"
+            :aria-label="t('nav.closeMenu')"
             @click="drawer = false"
           />
+        </div>
+
+        <!-- Mobile Language Selector in Drawer -->
+        <div class="mb-4 pb-4 border-b">
+          <LanguageSelector variant="drawer" />
         </div>
 
         <!-- Navigation Links List -->
         <v-list density="comfortable" nav class="px-0">
           <v-list-item
             v-for="item in siteConfig.navLinks"
-            :key="item.label"
-            :value="item.label"
+            :key="item.key"
+            :value="item.key"
             rounded="lg"
             class="mb-1 mobile-nav-item"
             @click="navigateTo(item.href)"
@@ -152,20 +168,20 @@ const navigateTo = (href) => {
             <template #prepend>
               <v-icon
                 :icon="
-                  item.label === 'Home' ? 'mdi-home-outline' :
-                  item.label === 'Services' ? 'mdi-briefcase-outline' :
-                  item.label === 'Products' ? 'mdi-cube-outline' :
-                  item.label === 'Capabilities' ? 'mdi-lightning-bolt-outline' :
-                  item.label === 'Why Us' ? 'mdi-shield-star-outline' :
-                  item.label === 'About Us' ? 'mdi-information-outline' : 'mdi-email-outline'
+                  item.key === 'home' ? 'mdi-home-outline' :
+                  item.key === 'services' ? 'mdi-briefcase-outline' :
+                  item.key === 'products' ? 'mdi-cube-outline' :
+                  item.key === 'capabilities' ? 'mdi-lightning-bolt-outline' :
+                  item.key === 'whyUs' ? 'mdi-shield-star-outline' :
+                  item.key === 'about' ? 'mdi-information-outline' : 'mdi-email-outline'
                 "
-                class="mr-3"
+                :class="isRtl ? 'ml-3' : 'mr-3'"
                 size="20"
                 color="primary"
               />
             </template>
             <v-list-item-title class="font-weight-semibold text-body-1">
-              {{ item.label }}
+              {{ t('nav.' + item.key) }}
             </v-list-item-title>
           </v-list-item>
         </v-list>
@@ -175,18 +191,20 @@ const navigateTo = (href) => {
       <div class="pt-4 border-t">
         <div class="mb-4">
           <div class="text-caption text-medium-emphasis mb-2 font-weight-medium">
-            Direct Reach
+            {{ t('nav.directReach') }}
           </div>
           <a
             :href="siteConfig.phoneTel"
-            class="d-flex align-center text-decoration-none text-body-2 mb-2 ga-2"
+            class="d-flex align-center text-decoration-none text-body-2 mb-2 ga-2 ltr-text"
+            dir="ltr"
           >
             <v-icon icon="mdi-phone-outline" size="16" color="secondary" />
             <span class="font-weight-medium text-high-emphasis">{{ siteConfig.phone }}</span>
           </a>
           <a
             :href="siteConfig.emailMailto"
-            class="d-flex align-center text-decoration-none text-body-2 ga-2"
+            class="d-flex align-center text-decoration-none text-body-2 ga-2 ltr-text"
+            dir="ltr"
           >
             <v-icon icon="mdi-email-outline" size="16" color="secondary" />
             <span class="font-weight-medium text-high-emphasis">{{ siteConfig.email }}</span>
@@ -202,7 +220,7 @@ const navigateTo = (href) => {
           class="btn-shimmer font-weight-bold"
           @click="navigateTo('#contact')"
         >
-          Let's Talk
+          {{ t('nav.cta') }}
         </v-btn>
       </div>
     </div>

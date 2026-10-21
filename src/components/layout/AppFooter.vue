@@ -1,16 +1,11 @@
 <script setup>
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import BrandLogo from './BrandLogo.vue'
 import { siteConfig } from '@/config/site.js'
 
-const footerServices = [
-  'Web Applications',
-  'Mobile Applications',
-  'AI Solutions',
-  'ERP Development',
-  'E-Commerce',
-  'API Development',
-  'Cloud & DevOps'
-]
+const { t, tm, locale } = useI18n()
+const isRtl = computed(() => locale.value === 'ar')
 
 const scrollTo = (href) => {
   const target = document.querySelector(href)
@@ -25,12 +20,12 @@ const scrollTo = (href) => {
     <v-container class="py-12 py-md-16">
       <v-row class="gy-8">
         <!-- Col 1: Brand Info & Socials -->
-        <v-col cols="12" md="4" class="pr-md-8">
+        <v-col cols="12" md="4" :class="isRtl ? 'pl-md-8' : 'pr-md-8'">
           <div class="mb-4">
             <BrandLogo :size="36" />
           </div>
           <p class="text-body-2 text-medium-emphasis line-height-relaxed mb-6">
-            Building modern digital solutions for businesses.
+            {{ t('footer.tagline') }}
           </p>
 
           <!-- Social Links -->
@@ -78,7 +73,7 @@ const scrollTo = (href) => {
             </v-btn>
           </div>
 
-          <div class="text-caption text-medium-emphasis mono-font">
+          <div class="text-caption text-medium-emphasis mono-font ltr-text" dir="ltr">
             {{ siteConfig.domain }}
           </div>
         </v-col>
@@ -86,24 +81,24 @@ const scrollTo = (href) => {
         <!-- Col 2: Navigation Links -->
         <v-col cols="6" sm="4" md="2">
           <h4 class="text-subtitle-2 font-weight-bold text-high-emphasis text-uppercase tracking-wider mb-4">
-            Navigation
+            {{ t('footer.navTitle') }}
           </h4>
           <ul class="footer-links-list">
-            <li><a href="#home" @click.prevent="scrollTo('#home')">Home</a></li>
-            <li><a href="#services" @click.prevent="scrollTo('#services')">Services</a></li>
-            <li><a href="#products" @click.prevent="scrollTo('#products')">Products</a></li>
-            <li><a href="#about" @click.prevent="scrollTo('#about')">About Us</a></li>
-            <li><a href="#contact" @click.prevent="scrollTo('#contact')">Contact</a></li>
+            <li><a href="#home" @click.prevent="scrollTo('#home')">{{ t('nav.home') }}</a></li>
+            <li><a href="#services" @click.prevent="scrollTo('#services')">{{ t('nav.services') }}</a></li>
+            <li><a href="#products" @click.prevent="scrollTo('#products')">{{ t('nav.products') }}</a></li>
+            <li><a href="#about" @click.prevent="scrollTo('#about')">{{ t('nav.about') }}</a></li>
+            <li><a href="#contact" @click.prevent="scrollTo('#contact')">{{ t('nav.contact') }}</a></li>
           </ul>
         </v-col>
 
         <!-- Col 3: Services Links -->
         <v-col cols="6" sm="4" md="3">
           <h4 class="text-subtitle-2 font-weight-bold text-high-emphasis text-uppercase tracking-wider mb-4">
-            Services
+            {{ t('footer.servicesTitle') }}
           </h4>
           <ul class="footer-links-list">
-            <li v-for="serv in footerServices" :key="serv">
+            <li v-for="serv in tm('footer.servicesList')" :key="serv">
               <a href="#services" @click.prevent="scrollTo('#services')">
                 {{ serv }}
               </a>
@@ -114,7 +109,7 @@ const scrollTo = (href) => {
         <!-- Col 4: Contact Details -->
         <v-col cols="12" sm="4" md="3">
           <h4 class="text-subtitle-2 font-weight-bold text-high-emphasis text-uppercase tracking-wider mb-4">
-            Contact
+            {{ t('footer.contactTitle') }}
           </h4>
           <div class="d-flex flex-column ga-3 text-body-2 text-medium-emphasis">
             <div class="d-flex align-start ga-2">
@@ -124,14 +119,14 @@ const scrollTo = (href) => {
 
             <div class="d-flex align-center ga-2">
               <v-icon icon="mdi-phone-outline" size="18" color="secondary" class="flex-shrink-0" />
-              <a :href="siteConfig.phoneTel" class="contact-link font-weight-medium">
+              <a :href="siteConfig.phoneTel" class="contact-link font-weight-medium ltr-text" dir="ltr">
                 {{ siteConfig.phone }}
               </a>
             </div>
 
             <div class="d-flex align-start ga-2">
               <v-icon icon="mdi-email-outline" size="18" color="secondary" class="mt-1 flex-shrink-0" />
-              <a :href="siteConfig.emailMailto" class="contact-link font-weight-medium email-text">
+              <a :href="siteConfig.emailMailto" class="contact-link font-weight-medium email-text ltr-text" dir="ltr">
                 {{ siteConfig.email }}
               </a>
             </div>
@@ -142,12 +137,12 @@ const scrollTo = (href) => {
       <!-- Bottom Copyright Row -->
       <div class="footer-bottom mt-12 pt-6 border-t d-flex flex-column flex-sm-row align-center justify-space-between ga-4">
         <div class="text-caption text-medium-emphasis text-center text-sm-left">
-          &copy; 2026 Next Challenge. All rights reserved.
+          &copy; 2026 Next Challenge. {{ t('footer.allRightsReserved') }}
         </div>
         <div class="d-flex align-center ga-6 text-caption text-medium-emphasis">
-          <span class="mono-font">{{ siteConfig.legalName }}</span>
+          <span class="mono-font ltr-text" dir="ltr">{{ siteConfig.legalName }}</span>
           <span>&bull;</span>
-          <a :href="siteConfig.siteUrl" class="text-medium-emphasis text-decoration-none">
+          <a :href="siteConfig.siteUrl" class="text-medium-emphasis text-decoration-none ltr-text" dir="ltr">
             nextchallenge.tech
           </a>
         </div>

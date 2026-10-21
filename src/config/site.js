@@ -33,19 +33,20 @@ export const siteConfig = {
 
   // Navigation Links
   navLinks: [
-    { label: 'Home', href: '#home' },
-    { label: 'Services', href: '#services' },
-    { label: 'Products', href: '#products' },
-    { label: 'Capabilities', href: '#capabilities' },
-    { label: 'Why Us', href: '#why-us' },
-    { label: 'About Us', href: '#about' },
-    { label: 'Contact', href: '#contact' }
+    { key: 'home', label: 'Home', href: '#home' },
+    { key: 'services', label: 'Services', href: '#services' },
+    { key: 'products', label: 'Products', href: '#products' },
+    { key: 'capabilities', label: 'Capabilities', href: '#capabilities' },
+    { key: 'whyUs', label: 'Why Us', href: '#why-us' },
+    { key: 'about', label: 'About Us', href: '#about' },
+    { key: 'contact', label: 'Contact', href: '#contact' }
   ],
 
   // Products & Projects Showcase
   products: [
     {
       id: 'fleetora',
+      key: 'fleetora',
       name: 'Fleetora',
       badge: 'Mobility & Logistics',
       category: 'Transportation Management Platform',
@@ -67,6 +68,7 @@ export const siteConfig = {
     },
     {
       id: 'inventory-demo',
+      key: 'inventoryDemo',
       name: 'Inventory Demo',
       badge: 'Commercial Enterprise',
       category: 'Inventory & ERP System',
@@ -88,6 +90,7 @@ export const siteConfig = {
     },
     {
       id: 'touriva',
+      key: 'touriva',
       name: 'Touriva',
       badge: 'Tourism & Marketplace',
       category: 'Travel & Tourism Platform',
@@ -113,6 +116,7 @@ export const siteConfig = {
   services: [
     {
       id: 'maintenance-support',
+      key: 'maintenanceSupport',
       title: 'Maintenance & Support',
       description: 'Keep your applications secure, stable, and continuously improving.',
       icon: 'mdi-wrench-clock-outline',
@@ -121,6 +125,7 @@ export const siteConfig = {
     },
     {
       id: 'bi-reporting',
+      key: 'biReporting',
       title: 'Business Intelligence & Reporting',
       description: 'Transform your data into actionable insights.',
       icon: 'mdi-chart-box-outline',
@@ -129,6 +134,7 @@ export const siteConfig = {
     },
     {
       id: 'mobile-app-dev',
+      key: 'mobileAppDev',
       title: 'Mobile App Development',
       description: 'Native-like mobile applications for Android and iOS using modern technologies.',
       icon: 'mdi-cellphone-link',
@@ -137,6 +143,7 @@ export const siteConfig = {
     },
     {
       id: 'api-development',
+      key: 'apiDevelopment',
       title: 'API Development & Integration',
       description: 'Connect your software with third-party services and internal systems.',
       icon: 'mdi-api',
@@ -145,6 +152,7 @@ export const siteConfig = {
     },
     {
       id: 'ai-solutions',
+      key: 'aiSolutions',
       title: 'AI Solutions',
       description: 'Integrate artificial intelligence into your business to automate processes and improve productivity.',
       icon: 'mdi-brain',
@@ -153,6 +161,7 @@ export const siteConfig = {
     },
     {
       id: 'devops-cloud',
+      key: 'devopsCloud',
       title: 'DevOps & Cloud Solutions',
       description: 'Automate deployment and ensure reliable, scalable infrastructure.',
       icon: 'mdi-cloud-sync-outline',
@@ -161,6 +170,7 @@ export const siteConfig = {
     },
     {
       id: 'ui-ux-design',
+      key: 'uiUxDesign',
       title: 'UI/UX Design',
       description: 'Modern, user-centered interfaces that improve user experience and conversion.',
       icon: 'mdi-palette-outline',
@@ -169,6 +179,7 @@ export const siteConfig = {
     },
     {
       id: 'ecommerce',
+      key: 'ecommerce',
       title: 'E-Commerce Solutions',
       description: 'Complete online selling platforms with secure payment integration.',
       icon: 'mdi-cart-check',
@@ -177,6 +188,7 @@ export const siteConfig = {
     },
     {
       id: 'erp-dev',
+      key: 'erpDev',
       title: 'ERP Development',
       description: 'Custom Enterprise Resource Planning solutions designed around your business processes.',
       icon: 'mdi-domain',
@@ -185,6 +197,7 @@ export const siteConfig = {
     },
     {
       id: 'web-app-dev',
+      key: 'webAppDev',
       title: 'Web Application Development',
       description: 'We build fast, secure, and scalable web applications tailored to your business needs.',
       icon: 'mdi-laptop',
@@ -197,6 +210,7 @@ export const siteConfig = {
   whyChooseUs: [
     {
       id: 'business-focused',
+      key: 'businessFocused',
       title: 'Business-Focused Solutions',
       description: 'We build technology around real business needs rather than generic solutions.',
       icon: 'mdi-bullseye-arrow',
@@ -204,6 +218,7 @@ export const siteConfig = {
     },
     {
       id: 'modern-tech',
+      key: 'modernTech',
       title: 'Modern Technology',
       description: 'We use modern technologies and development practices to create scalable applications.',
       icon: 'mdi-lightning-bolt-outline',
@@ -211,6 +226,7 @@ export const siteConfig = {
     },
     {
       id: 'scalable-arch',
+      key: 'scalableArch',
       title: 'Scalable Architecture',
       description: 'Our solutions are designed to grow with your business.',
       icon: 'mdi-layers-triple-outline',
@@ -218,6 +234,7 @@ export const siteConfig = {
     },
     {
       id: 'continuous-support',
+      key: 'continuousSupport',
       title: 'Continuous Support',
       description: 'We can maintain, improve, and evolve applications after deployment.',
       icon: 'mdi-shield-check-outline',
@@ -225,6 +242,7 @@ export const siteConfig = {
     },
     {
       id: 'end-to-end',
+      key: 'endToEnd',
       title: 'End-to-End Development',
       description: 'From UI/UX and development to APIs, deployment, cloud infrastructure, and support.',
       icon: 'mdi-sync',
@@ -232,6 +250,7 @@ export const siteConfig = {
     },
     {
       id: 'innovation',
+      key: 'innovation',
       title: 'Innovation',
       description: 'We use modern technologies including AI and automation to help businesses work smarter.',
       icon: 'mdi-creation',
@@ -242,66 +261,77 @@ export const siteConfig = {
   // Capabilities & Technology Matrix
   capabilities: [
     {
+      key: 'web',
       title: 'Web Applications',
       subtitle: 'Modern Single Page & Progressive Web Applications',
       icon: 'mdi-web',
       technologies: ['Vue 3', 'Vuetify 4', 'Vite', 'HTML5/CSS3', 'TypeScript/JavaScript']
     },
     {
+      key: 'mobile',
       title: 'Mobile Applications',
       subtitle: 'Cross-platform native-feeling mobile solutions',
       icon: 'mdi-cellphone',
       technologies: ['Android', 'iOS', 'Capacitor', 'PWA', 'Push Notifications']
     },
     {
+      key: 'api',
       title: 'REST APIs',
       subtitle: 'Secure, high-throughput microservices and gateways',
       icon: 'mdi-server-network',
       technologies: ['Node.js', 'Express', 'JWT Authentication', 'Rate Limiting', 'OpenAPI']
     },
     {
+      key: 'cloud',
       title: 'Cloud Infrastructure',
       subtitle: 'Resilient and highly available cloud deployments',
       icon: 'mdi-cloud-outline',
       technologies: ['Render', 'AWS', 'Nginx', 'SSL/TLS', 'High Availability']
     },
     {
+      key: 'database',
       title: 'Database Systems',
       subtitle: 'Relational & document data models built for scale',
       icon: 'mdi-database-outline',
       technologies: ['MongoDB', 'PostgreSQL', 'SQLite', 'Redis Caching', 'Data Migrations']
     },
     {
+      key: 'ai',
       title: 'AI Integration',
       subtitle: 'Intelligent automation and large language model tooling',
       icon: 'mdi-robot-outline',
       technologies: ['Ollama', 'OpenAI APIs', 'Prompt Workflows', 'Smart Data Extraction']
     },
     {
+      key: 'bi',
       title: 'Business Intelligence',
       subtitle: 'Real-time analytics, dashboards, and reporting pipelines',
       icon: 'mdi-chart-timeline-variant',
       technologies: ['jsPDF Exports', 'Interactive Charts', 'Aggregation Pipelines', 'KPIs']
     },
     {
+      key: 'erp',
       title: 'ERP Systems',
       subtitle: 'Tailored enterprise resource management software',
       icon: 'mdi-office-building-cog',
       technologies: ['Stock Accounting', 'Multi-Warehouse', 'Commercial Invoicing', 'DA Tax Rules']
     },
     {
+      key: 'ecommerce',
       title: 'E-Commerce',
       subtitle: 'End-to-end multi-tenant digital storefronts',
       icon: 'mdi-cart-outline',
       technologies: ['Cart Checkout', 'Payment Gateways', 'Order Tracking', 'Artisan Portals']
     },
     {
+      key: 'devops',
       title: 'DevOps',
       subtitle: 'Automated CI/CD pipelines & release automation',
       icon: 'mdi-git',
       technologies: ['Git Workflows', 'Automated Builds', 'Linting', 'Zero-Downtime Rollouts']
     },
     {
+      key: 'uiux',
       title: 'UI/UX Design',
       subtitle: 'Design systems crafted for clarity, contrast, and speed',
       icon: 'mdi-draw',

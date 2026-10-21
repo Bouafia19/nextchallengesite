@@ -1,5 +1,8 @@
 <script setup>
+import { useI18n } from 'vue-i18n'
 import { siteConfig } from '@/config/site.js'
+
+const { t } = useI18n()
 </script>
 
 <template>
@@ -9,13 +12,13 @@ import { siteConfig } from '@/config/site.js'
       <div class="text-center max-w-700 mx-auto mb-14">
         <span class="badge-pill mb-3">
           <v-icon icon="mdi-code-braces" size="16" color="primary" class="mr-1" />
-          Technical Expertise
+          {{ t('capabilities.badge') }}
         </span>
         <h2 class="text-h3 font-weight-bold mb-4 tracking-tight">
-          Capabilities &amp; Technology Stack
+          {{ t('capabilities.title') }}
         </h2>
         <p class="text-h6 font-weight-regular text-medium-emphasis">
-          Modern engineering stack powering high-performance, fault-tolerant digital systems.
+          {{ t('capabilities.subtitle') }}
         </p>
       </div>
 
@@ -23,7 +26,7 @@ import { siteConfig } from '@/config/site.js'
       <v-row class="g-6">
         <v-col
           v-for="cap in siteConfig.capabilities"
-          :key="cap.title"
+          :key="cap.key || cap.title"
           cols="12"
           sm="6"
           lg="4"
@@ -38,14 +41,14 @@ import { siteConfig } from '@/config/site.js'
                 </div>
                 <div>
                   <h3 class="text-subtitle-1 font-weight-bold tracking-tight">
-                    {{ cap.title }}
+                    {{ cap.key ? t('capabilities.items.' + cap.key + '.title') : cap.title }}
                   </h3>
                 </div>
               </div>
 
               <!-- Subtitle Description -->
               <p class="text-caption text-medium-emphasis mb-4">
-                {{ cap.subtitle }}
+                {{ cap.key ? t('capabilities.items.' + cap.key + '.subtitle') : cap.subtitle }}
               </p>
             </div>
 
