@@ -43,9 +43,25 @@ const handleSelect = (code) => {
         rounded="lg"
         :aria-label="t('nav.language') + ': ' + currentLocaleObj.nativeName"
       >
-        <v-icon icon="mdi-translate" size="18" class="mr-1 text-secondary" />
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          class="globe-icon me-1 text-secondary"
+          aria-hidden="true"
+        >
+          <circle cx="12" cy="12" r="10" />
+          <line x1="2" y1="12" x2="22" y2="12" />
+          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+        </svg>
         <span class="lang-label mx-1 font-weight-semibold">{{ currentLocaleObj.nativeName }}</span>
-        <v-icon icon="mdi-chevron-down" size="16" class="text-medium-emphasis ml-1" />
+        <v-icon icon="mdi-chevron-down" size="16" class="text-medium-emphasis ms-1" />
       </v-btn>
     </template>
 
@@ -61,10 +77,6 @@ const handleSelect = (code) => {
           :aria-current="item.code === locale ? 'true' : undefined"
           @click="handleSelect(item.code)"
         >
-          <template #prepend>
-            <span class="lang-flag mr-2" aria-hidden="true">{{ item.flag }}</span>
-          </template>
-
           <v-list-item-title class="font-weight-medium text-body-2">
             {{ item.nativeName }}
           </v-list-item-title>
@@ -85,7 +97,23 @@ const handleSelect = (code) => {
   <!-- Mobile Navigation Drawer Variant -->
   <div v-else class="lang-drawer-container">
     <div class="text-caption text-medium-emphasis mb-2 font-weight-medium d-flex align-center ga-1">
-      <v-icon icon="mdi-translate" size="16" color="secondary" />
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        class="globe-icon me-1 text-secondary"
+        aria-hidden="true"
+      >
+        <circle cx="12" cy="12" r="10" />
+        <line x1="2" y1="12" x2="22" y2="12" />
+        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+      </svg>
       <span>{{ t('nav.language') }}</span>
     </div>
     <div class="lang-chips-grid">
@@ -100,9 +128,8 @@ const handleSelect = (code) => {
         :aria-pressed="item.code === locale"
         @click="handleSelect(item.code)"
       >
-        <span class="mr-1" aria-hidden="true">{{ item.flag }}</span>
         <span>{{ item.nativeName }}</span>
-        <v-icon v-if="item.code === locale" icon="mdi-check" size="14" class="ml-1" />
+        <v-icon v-if="item.code === locale" icon="mdi-check" size="14" class="ms-1" />
       </v-btn>
     </div>
   </div>
@@ -126,6 +153,17 @@ const handleSelect = (code) => {
   border-color: rgba(91, 84, 232, 0.3) !important;
 }
 
+.globe-icon {
+  display: inline-block;
+  vertical-align: middle;
+  flex-shrink: 0;
+  transition: transform 0.25s ease;
+}
+
+.lang-selector-btn:hover .globe-icon {
+  transform: rotate(20deg);
+}
+
 .lang-menu-card {
   border: 1px solid rgba(255, 255, 255, 0.12) !important;
   box-shadow: 0 16px 36px -4px rgba(0, 0, 0, 0.5) !important;
@@ -137,11 +175,6 @@ const handleSelect = (code) => {
 
 .lang-menu-item:hover {
   background: rgba(91, 84, 232, 0.15) !important;
-}
-
-.lang-flag {
-  font-size: 1.1rem;
-  line-height: 1;
 }
 
 .lang-drawer-container {

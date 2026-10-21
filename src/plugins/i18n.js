@@ -4,9 +4,9 @@ import en from '../locales/en.json'
 import ar from '../locales/ar.json'
 
 export const SUPPORTED_LOCALES = [
-  { code: 'fr', name: 'Français', nativeName: 'Français', dir: 'ltr', flag: '🇫🇷' },
-  { code: 'en', name: 'English', nativeName: 'English', dir: 'ltr', flag: '🇬🇧' },
-  { code: 'ar', name: 'العربية', nativeName: 'العربية', dir: 'rtl', flag: '🇩🇿' }
+  { code: 'fr', name: 'Français', nativeName: 'Français', dir: 'ltr' },
+  { code: 'en', name: 'English', nativeName: 'English', dir: 'ltr' },
+  { code: 'ar', name: 'العربية', nativeName: 'العربية', dir: 'rtl' }
 ]
 
 export const DEFAULT_LOCALE = 'fr'
