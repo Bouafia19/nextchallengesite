@@ -1,0 +1,65 @@
+services:
+  # Next Challenge — Render Static Site Deployment (Production CDN)
+  # Domain: https://nextchallenge.tech
+  - type: web
+    name: nextchallenge-tech
+    runtime: static
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    autoDeploy: true
+    headers:
+      - path: /*
+        name: X-Frame-Options
+        value: SAMEORIGIN
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_CONTACT_API_URL
+        value: /api/contact
+      - key: VITE_FLEETORA_URL
+        value: https://fleetora-web.onrender.com
+      - key: VITE_INVENTORY_URL
+        value: https://inventory-v2-web-demo.onrender.com
+      - key: VITE_TOURIVA_URL
+        value: https://touriva-web.onrender.com
+      - key: VITE_FACEBOOK_URL
+        sync: false
+      - key: VITE_INSTAGRAM_URL
+        sync: false
+      - key: VITE_LINKEDIN_URL
+        sync: false
+
+  # Next Challenge — Backend Contact Service (Express + Nodemailer)
+  # Can be deployed alongside static site or as a unified fullstack web service
+  - type: web
+    name: nextchallenge-server
+    runtime: node
+    plan: free
+    region: frankfurt
+    buildCommand: npm install && npm run build
+    startCommand: node server/server.js
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: CONTACT_RECEIVER_EMAIL
+        value: nextchallenge2021@gmail.com
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_SECURE
+        value: "false"
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
