@@ -246,12 +246,12 @@ Timestamp: ${new Date().toISOString()}
     `
   }
 
-  // SMTP Configuration
+  // SMTP Transporter Configuration
+  const smtpHost = process.env.SMTP_HOST || 'smtp.gmail.com'
+  const smtpPort = Number(process.env.SMTP_PORT) || 465
+  const smtpSecure = process.env.SMTP_SECURE !== undefined ? process.env.SMTP_SECURE === 'true' : smtpPort === 465
   const smtpUser = process.env.SMTP_USER || process.env.MAIL_USER
   const smtpPass = process.env.SMTP_PASS || process.env.MAIL_PASS
-  const smtpHost = process.env.SMTP_HOST || 'smtp.gmail.com'
-  const smtpPort = Number(process.env.SMTP_PORT) || 587
-  const smtpSecure = process.env.SMTP_SECURE === 'true' || smtpPort === 465
   const hasSmtpConfig = Boolean(smtpUser && smtpPass)
 
   if (!hasSmtpConfig) {
@@ -273,7 +273,8 @@ Timestamp: ${new Date().toISOString()}
       }
     })
 
-    await transporter.sendMail(mailOptions)
+    const info = await transporter.sendMail(mailOptions)
+    console.log(`[Contact API] Message delivered successfully to ${RECEIVER_EMAIL} (Message ID: ${info.messageId})`)
 
     return res.status(200).json({
       success: true,
