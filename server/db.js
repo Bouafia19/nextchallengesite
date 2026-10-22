@@ -14,6 +14,27 @@ dotenv.config({ path: path.resolve(rootDir, '.env') })
 
 import mongoose from 'mongoose'
 
+// Track last error for health check and diagnostics
+let lastMongoError = null
+
+/**
+ * Explicit error event listener attached to Mongoose connection
+ * Prints the complete error object so the exact reason why Atlas is rejecting is exposed
+ */
+mongoose.connection.on('error', (err) => {
+  lastMongoError = err?.message || String(err)
+  console.error('[MongoDB Error]', err)
+})
+
+mongoose.connection.on('connected', () => {
+  lastMongoError = null
+  console.log(`[MongoDB] Connected successfully to database: ${mongoose.connection.name || 'nextchallenge'}`)
+})
+
+mongoose.connection.on('disconnected', () => {
+  console.warn('[MongoDB] Connection disconnected. Attempting automatic reconnection...')
+})
+
 /**
  * Safely mask sensitive credentials in MongoDB / Atlas connection string
  */
@@ -40,29 +61,13 @@ export async function connectDB() {
   }
 
   try {
-    // Remove all previous event listeners to prevent memory leak on re-connect
-    mongoose.connection.removeAllListeners('connected')
-    mongoose.connection.removeAllListeners('error')
-    mongoose.connection.removeAllListeners('disconnected')
-
-    mongoose.connection.on('connected', () => {
-      console.log(`[MongoDB] Connected successfully to database: ${mongoose.connection.name || dbName}`)
-    })
-
-    mongoose.connection.on('error', (err) => {
-      console.error('[MongoDB] Connection error:', err.message)
-    })
-
-    mongoose.connection.on('disconnected', () => {
-      console.warn('[MongoDB] Connection disconnected. Attempting automatic reconnection...')
-    })
-
     // Print safely masked version of the URI right before connection
     const maskedUri = maskMongoUri(uri)
     console.log(`[MongoDB] Initializing connection to: ${maskedUri}`)
 
     const connectionOptions = {
-      serverSelectionTimeoutMS: 10000,
+      serverSelectionTimeoutMS: 5000,
+      connectTimeoutMS: 5000,
       socketTimeoutMS: 45000,
       autoIndex: true,
       maxPoolSize: 10
@@ -76,13 +81,18 @@ export async function connectDB() {
 
     return mongoose.connection
   } catch (error) {
-    console.error('[MongoDB] Initial connection failed:', error.message)
+    lastMongoError = error?.message || String(error)
+    console.error('[MongoDB Error]', error)
     return null
   }
 }
 
 export function isDbConnected() {
   return mongoose.connection.readyState === 1
+}
+
+export function getLastMongoError() {
+  return lastMongoError
 }
 
 export default connectDB

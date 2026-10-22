@@ -14,7 +14,7 @@ dotenv.config({ path: path.resolve(rootDir, '.env') })
 
 import express from 'express'
 import cors from 'cors'
-import { connectDB, isDbConnected } from './db.js'
+import { connectDB, isDbConnected, getLastMongoError } from './db.js'
 import Contact from './models/Contact.js'
 import Course from './models/Course.js'
 import Enrollment from './models/Enrollment.js'
@@ -150,11 +150,15 @@ function rateLimiter(req, res, next) {
 
 // Health Check
 app.get('/health', (req, res) => {
-  res.json({
+  const dbStatus = isDbConnected() ? 'connected' : 'disconnected'
+  const err = getLastMongoError()
+
+  res.status(dbStatus === 'connected' ? 200 : 503).json({
     status: 'ok',
     service: 'nextchallengesite-unified',
     domain: 'nextchallenge.tech',
-    database: isDbConnected() ? 'connected' : 'disconnected',
+    database: dbStatus,
+    ...(err && dbStatus === 'disconnected' ? { error: err } : {}),
     timestamp: new Date().toISOString()
   })
 })
