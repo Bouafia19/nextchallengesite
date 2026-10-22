@@ -9,8 +9,10 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const rootDir = path.resolve(__dirname, '..')
 
-// Explicitly load .env from root directory if present
-dotenv.config({ path: path.resolve(rootDir, '.env') })
+// Only load local .env in non-production environments
+if (process.env.NODE_ENV !== 'production') {
+  dotenv.config({ path: path.resolve(rootDir, '.env') })
+}
 
 import express from 'express'
 import cors from 'cors'
@@ -433,9 +435,10 @@ app.post('/api/admin/verify', requireAdminAuth, (req, res) => {
 app.get('/api/admin/contacts', requireAdminAuth, async (req, res) => {
   try {
     if (!isDbConnected()) {
+      const err = getLastMongoError()
       return res.status(503).json({
         success: false,
-        message: 'Database currently disconnected. MongoDB is initializing connection.'
+        message: err ? `Database currently disconnected: ${err}` : 'Database currently disconnected. MongoDB is initializing connection.'
       })
     }
 
@@ -498,9 +501,10 @@ app.get('/api/admin/contacts', requireAdminAuth, async (req, res) => {
 app.get('/api/admin/contacts/stats', requireAdminAuth, async (req, res) => {
   try {
     if (!isDbConnected()) {
+      const err = getLastMongoError()
       return res.status(503).json({
         success: false,
-        message: 'Database currently disconnected. MongoDB is initializing connection.'
+        message: err ? `Database currently disconnected: ${err}` : 'Database currently disconnected. MongoDB is initializing connection.'
       })
     }
 
@@ -628,9 +632,10 @@ app.delete('/api/admin/contacts/:id', requireAdminAuth, async (req, res) => {
 app.get('/api/admin/courses', requireAdminAuth, async (req, res) => {
   try {
     if (!isDbConnected()) {
+      const err = getLastMongoError()
       return res.status(503).json({
         success: false,
-        message: 'Database currently disconnected.'
+        message: err ? `Database currently disconnected: ${err}` : 'Database currently disconnected.'
       })
     }
 
@@ -861,9 +866,10 @@ app.patch('/api/admin/courses/:id/toggle-active', requireAdminAuth, async (req, 
 app.get('/api/admin/enrollments', requireAdminAuth, async (req, res) => {
   try {
     if (!isDbConnected()) {
+      const err = getLastMongoError()
       return res.status(503).json({
         success: false,
-        message: 'Database temporarily unavailable.'
+        message: err ? `Database temporarily unavailable: ${err}` : 'Database temporarily unavailable.'
       })
     }
 

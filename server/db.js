@@ -9,8 +9,10 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const rootDir = path.resolve(__dirname, '..')
 
-// Also check project root .env if present
-dotenv.config({ path: path.resolve(rootDir, '.env') })
+// Only load local .env in non-production environments
+if (process.env.NODE_ENV !== 'production') {
+  dotenv.config({ path: path.resolve(rootDir, '.env') })
+}
 
 import mongoose from 'mongoose'
 
@@ -47,12 +49,24 @@ function maskMongoUri(uri) {
  * MongoDB Atlas & Local connection helper with resilient reconnects
  */
 export async function connectDB() {
-  // Strictly prioritize process.env.MONGODB_URI, falling back to localhost only if undefined
-  const rawUri = process.env.MONGODB_URI
-  const uri = (rawUri && typeof rawUri === 'string' && rawUri.trim())
+  const isProduction = process.env.NODE_ENV === 'production'
+  const rawUri = process.env.MONGODB_URI || process.env.MONGO_URI || process.env.DATABASE_URL
+  const cleanUri = (rawUri && typeof rawUri === 'string' && rawUri.trim())
     ? rawUri.trim().replace(/^["']|["']$/g, '').trim()
-    : 'mongodb://127.0.0.1:27017/nextchallenge'
+    : ''
 
+  // In production, strictly disallow falling back to localhost
+  if (isProduction) {
+    if (!cleanUri || cleanUri.includes('127.0.0.1') || cleanUri.includes('localhost')) {
+      const errorMsg = 'MONGODB_URI is not configured'
+      lastMongoError = errorMsg
+      console.error(`[MongoDB Error] ${errorMsg}. In production, MONGODB_URI must be provided via environment variables (e.g. in the Render Dashboard).`)
+      return null
+    }
+  }
+
+  // Use configured URI, or safe localhost default only for local development
+  const uri = cleanUri || 'mongodb://127.0.0.1:27017/nextchallenge'
   const dbName = process.env.MONGODB_DB_NAME || 'nextchallenge'
 
   // Prevent multiple connection attempts if already connected or connecting
