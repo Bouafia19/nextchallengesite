@@ -38,13 +38,21 @@ function secureCompare(a, b) {
  * and malformed environment variables.
  */
 export function requireAdminAuth(req, res, next) {
+  const isProduction = process.env.NODE_ENV === 'production'
   const rawConfiguredKey =
     process.env.ADMIN_API_KEY ||
     process.env.ADMIN_KEY ||
-    process.env.VITE_ADMIN_API_KEY ||
-    'nc_admin_secret_2026'
+    (!isProduction ? 'nc_admin_secret_dev' : '')
 
   const configuredKey = normalizeKey(rawConfiguredKey)
+
+  if (!configuredKey) {
+    console.error('[Admin Auth Error] ADMIN_API_KEY is not configured in server environment.')
+    return res.status(500).json({
+      success: false,
+      message: 'Server security configuration error. ADMIN_API_KEY is not configured.'
+    })
+  }
 
   // Extract key across all possible header casings and conventions
   let rawProvidedKey =

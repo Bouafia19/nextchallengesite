@@ -11,7 +11,6 @@ const rawApiUrl =
   '/api/admin'
 
 const apiBase = rawApiUrl.replace(/\/contacts\/?$/, '').replace(/\/$/, '')
-const envApiKey = (import.meta.env.VITE_ADMIN_API_KEY || 'nc_admin_secret_2026').trim().replace(/^["']|["']$/g, '')
 
 // Safe endpoint URL builder for relative & absolute paths
 const getApiUrl = (endpoint = '') => {
@@ -23,8 +22,9 @@ const getApiUrl = (endpoint = '') => {
 }
 
 // Authentication State
+// API key is strictly user-supplied; never hardcoded or pre-filled from frontend bundles
 const storedKey = (localStorage.getItem('nc_admin_key') || '').trim().replace(/^["']|["']$/g, '')
-const apiKey = ref(storedKey || envApiKey)
+const apiKey = ref(storedKey)
 const isAuthenticated = ref(false)
 const isAuthenticating = ref(false)
 const authError = ref('')
