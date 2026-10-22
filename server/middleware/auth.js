@@ -76,10 +76,6 @@ export function requireAdminAuth(req, res, next) {
 
   const providedKey = normalizeKey(rawProvidedKey)
 
-  // Debug logging for admin authentication inspection
-  console.log('[Auth Debug] Received: [' + rawProvidedKey + ']')
-  console.log('[Auth Debug] process.env.ADMIN_API_KEY: [' + process.env.ADMIN_API_KEY + ']')
-
   if (!providedKey || !secureCompare(providedKey, configuredKey)) {
     return res.status(401).json({
       success: false,
