@@ -1,13 +1,15 @@
+import dotenv from 'dotenv'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import dotenv from 'dotenv'
+
+// Ensure dotenv is initialized at the very top of the file before any database code runs
+dotenv.config()
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const rootDir = path.resolve(__dirname, '..')
 
 dotenv.config({ path: path.resolve(rootDir, '.env') })
-dotenv.config()
 
 import { connectDB } from './db.js'
 import Course from './models/Course.js'

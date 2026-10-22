@@ -67,6 +67,21 @@ const isCourseDeleteOpen = ref(false)
 const courseToDelete = ref(null)
 const isDeletingCourse = ref(false)
 
+// Enrollments Module State
+const enrollmentsList = ref([])
+const enrollmentsStats = ref({ total: 0, pending: 0, approved: 0, rejected: 0 })
+const isEnrollmentsLoading = ref(false)
+const enrollmentSearchQuery = ref('')
+const enrollmentFilter = ref('all') // 'all' | 'pending' | 'approved' | 'rejected'
+const selectedEnrollment = ref(null)
+const isEnrollmentDetailOpen = ref(false)
+const enrollmentToDelete = ref(null)
+const isEnrollmentDeleteOpen = ref(false)
+const isDeletingEnrollment = ref(false)
+const isUpdatingEnrollmentStatus = ref(false)
+const enrollmentAdminNotesInput = ref('')
+const isSavingEnrollmentNotes = ref(false)
+
 // Dashboard Data State
 const contacts = ref([])
 const totalCount = ref(0)
@@ -170,8 +185,8 @@ const authenticate = async () => {
       localStorage.setItem('nc_admin_key', cleanKey)
     }
 
-    // Fetch initial contacts, courses, and start polling
-    await Promise.all([fetchContacts(true), fetchAdminCourses()])
+    // Fetch initial contacts, courses, enrollments, and start polling
+    await Promise.all([fetchContacts(true), fetchAdminCourses(), fetchAdminEnrollments()])
     startPolling()
   } catch (err) {
     authError.value = err.message || 'Invalid Admin API Key. Access denied.'
@@ -277,7 +292,13 @@ const startPolling = () => {
   }, 1000)
 
   pollingTimer.value = setInterval(() => {
-    fetchContacts(false)
+    if (currentAdminTab.value === 'submissions') {
+      fetchContacts(false)
+    } else if (currentAdminTab.value === 'courses') {
+      fetchAdminCourses()
+    } else if (currentAdminTab.value === 'enrollments') {
+      fetchAdminEnrollments()
+    }
   }, pollingIntervalSeconds.value * 1000)
 }
 
@@ -691,6 +712,163 @@ watch([courseFilter, courseSearchQuery], () => {
   }
 })
 
+// ---------------------------------------------------------------------------
+// Student Enrollments Methods
+// ---------------------------------------------------------------------------
+const fetchAdminEnrollments = async () => {
+  if (!isAuthenticated.value) return
+  isEnrollmentsLoading.value = true
+
+  try {
+    const url = new URL(getApiUrl('/enrollments'))
+    if (enrollmentFilter.value !== 'all') {
+      url.searchParams.set('status', enrollmentFilter.value)
+    }
+    if (enrollmentSearchQuery.value.trim()) {
+      url.searchParams.set('search', enrollmentSearchQuery.value.trim())
+    }
+
+    const res = await fetch(url.toString(), { headers: getAuthHeaders() })
+    if (res.ok) {
+      const data = await res.json()
+      enrollmentsList.value = data.enrollments || []
+      enrollmentsStats.value = {
+        total: data.totalCount ?? enrollmentsList.value.length,
+        pending: data.pendingCount ?? enrollmentsList.value.filter((e) => e.status === 'pending').length,
+        approved: data.approvedCount ?? enrollmentsList.value.filter((e) => e.status === 'approved').length,
+        rejected: data.rejectedCount ?? enrollmentsList.value.filter((e) => e.status === 'rejected').length
+      }
+    }
+  } catch (err) {
+    console.error('Failed to load enrollments:', err)
+  } finally {
+    isEnrollmentsLoading.value = false
+  }
+}
+
+const updateEnrollmentStatus = async (enrollment, newStatus, notes = null) => {
+  if (!enrollment?._id) return
+  isUpdatingEnrollmentStatus.value = true
+
+  try {
+    const payload = { status: newStatus }
+    if (notes !== null) {
+      payload.adminNotes = notes
+    }
+
+    const res = await fetch(getApiUrl(`/enrollments/${enrollment._id}/status`), {
+      method: 'PATCH',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(payload)
+    })
+    const data = await res.json()
+    if (res.ok && data.success) {
+      enrollment.status = newStatus
+      if (notes !== null) enrollment.adminNotes = notes
+      if (selectedEnrollment.value && selectedEnrollment.value._id === enrollment._id) {
+        selectedEnrollment.value.status = newStatus
+        if (notes !== null) selectedEnrollment.value.adminNotes = notes
+      }
+      toastMessage.value = `Enrollment status updated to "${newStatus.toUpperCase()}".`
+      isToastOpen.value = true
+      await fetchAdminEnrollments()
+    } else {
+      throw new Error(data.message || 'Failed to update enrollment status')
+    }
+  } catch (err) {
+    toastMessage.value = err.message || 'Status update failed'
+    isToastOpen.value = true
+  } finally {
+    isUpdatingEnrollmentStatus.value = false
+  }
+}
+
+const saveEnrollmentAdminNotes = async () => {
+  if (!selectedEnrollment.value?._id) return
+  isSavingEnrollmentNotes.value = true
+  try {
+    const res = await fetch(getApiUrl(`/enrollments/${selectedEnrollment.value._id}/status`), {
+      method: 'PATCH',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({
+        status: selectedEnrollment.value.status,
+        adminNotes: enrollmentAdminNotesInput.value
+      })
+    })
+    const data = await res.json()
+    if (res.ok && data.success) {
+      selectedEnrollment.value.adminNotes = enrollmentAdminNotesInput.value
+      const found = enrollmentsList.value.find((e) => e._id === selectedEnrollment.value._id)
+      if (found) found.adminNotes = enrollmentAdminNotesInput.value
+      toastMessage.value = 'Staff notes saved.'
+      isToastOpen.value = true
+    } else {
+      throw new Error(data.message || 'Failed to save notes')
+    }
+  } catch (err) {
+    toastMessage.value = err.message || 'Failed to save notes'
+    isToastOpen.value = true
+  } finally {
+    isSavingEnrollmentNotes.value = false
+  }
+}
+
+const openEnrollmentDetail = (enrollment) => {
+  selectedEnrollment.value = { ...enrollment }
+  enrollmentAdminNotesInput.value = enrollment.adminNotes || ''
+  isEnrollmentDetailOpen.value = true
+}
+
+const confirmDeleteEnrollment = (enrollment) => {
+  enrollmentToDelete.value = enrollment
+  isEnrollmentDeleteOpen.value = true
+}
+
+const executeDeleteEnrollment = async () => {
+  if (!enrollmentToDelete.value?._id) return
+  isDeletingEnrollment.value = true
+
+  try {
+    const res = await fetch(getApiUrl(`/enrollments/${enrollmentToDelete.value._id}`), {
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    })
+    const data = await res.json()
+    if (!res.ok || !data.success) {
+      throw new Error(data.message || 'Failed to delete application')
+    }
+
+    toastMessage.value = 'Application deleted successfully.'
+    isToastOpen.value = true
+    isEnrollmentDeleteOpen.value = false
+    if (selectedEnrollment.value?._id === enrollmentToDelete.value._id) {
+      isEnrollmentDetailOpen.value = false
+    }
+    enrollmentToDelete.value = null
+    await fetchAdminEnrollments()
+  } catch (err) {
+    toastMessage.value = err.message || 'Delete operation failed'
+    isToastOpen.value = true
+  } finally {
+    isDeletingEnrollment.value = false
+  }
+}
+
+const exportEnrollmentsJson = () => {
+  if (!enrollmentsList.value.length) return
+  const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(enrollmentsList.value, null, 2))
+  const dlAnchorElem = document.createElement('a')
+  dlAnchorElem.setAttribute('href', dataStr)
+  dlAnchorElem.setAttribute('download', `nc_enrollments_${new Date().toISOString().slice(0, 10)}.json`)
+  dlAnchorElem.click()
+}
+
+watch([enrollmentFilter, enrollmentSearchQuery], () => {
+  if (currentAdminTab.value === 'enrollments') {
+    fetchAdminEnrollments()
+  }
+})
+
 // Sorter or initial mount
 onMounted(() => {
   if (apiKey.value) {
@@ -934,6 +1112,35 @@ onUnmounted(() => {
               class="font-weight-bold ml-2"
             >
               {{ coursesStats.total }}
+            </v-chip>
+          </v-btn>
+
+          <v-btn
+            :variant="currentAdminTab === 'enrollments' ? 'flat' : 'outlined'"
+            :color="currentAdminTab === 'enrollments' ? '#00366F' : 'grey-lighten-1'"
+            size="large"
+            class="font-weight-bold px-5 module-tab-btn"
+            prepend-icon="mdi-account-school-outline"
+            @click="currentAdminTab = 'enrollments'; fetchAdminEnrollments()"
+          >
+            <span>Student Enrollments</span>
+            <v-chip
+              v-if="enrollmentsStats.pending > 0"
+              size="x-small"
+              color="#00c2ff"
+              variant="flat"
+              class="text-slate-900 font-weight-bold ml-2"
+            >
+              {{ enrollmentsStats.pending }}
+            </v-chip>
+            <v-chip
+              v-else
+              size="x-small"
+              color="grey-lighten-1"
+              variant="tonal"
+              class="font-weight-bold ml-2"
+            >
+              {{ enrollmentsStats.total }}
             </v-chip>
           </v-btn>
         </div>
@@ -1623,6 +1830,393 @@ onUnmounted(() => {
             </div>
           </v-card>
         </template>
+
+        <!-- ============================================== -->
+        <!-- TAB 3: STUDENT ENROLLMENTS MANAGEMENT          -->
+        <!-- ============================================== -->
+        <template v-else-if="currentAdminTab === 'enrollments'">
+          <!-- Enrollments KPI Summary -->
+          <v-row class="mb-6 gy-4">
+            <!-- Total Applications -->
+            <v-col cols="12" sm="6" lg="3">
+              <v-card class="kpi-card pa-4">
+                <div class="d-flex align-center justify-space-between">
+                  <div>
+                    <div class="text-caption text-grey-lighten-1 font-weight-medium text-uppercase tracking-wider">
+                      Total Applications
+                    </div>
+                    <div class="text-h4 font-weight-bold text-white mt-1">
+                      {{ enrollmentsStats.total }}
+                    </div>
+                  </div>
+                  <div class="kpi-icon-wrapper bg-navy">
+                    <v-icon icon="mdi-account-group-outline" color="#38bdf8" size="28" />
+                  </div>
+                </div>
+                <div class="text-caption text-grey-lighten-2 mt-3 d-flex align-center ga-1">
+                  <v-icon icon="mdi-school-outline" size="14" color="#38bdf8" />
+                  <span>All course candidates</span>
+                </div>
+              </v-card>
+            </v-col>
+
+            <!-- Pending Review -->
+            <v-col cols="12" sm="6" lg="3">
+              <v-card class="kpi-card pa-4 kpi-card--unread" :class="{ 'has-unread': enrollmentsStats.pending > 0 }">
+                <div class="d-flex align-center justify-space-between">
+                  <div>
+                    <div class="text-caption text-cyan-lighten-2 font-weight-medium text-uppercase tracking-wider">
+                      Pending Review
+                    </div>
+                    <div class="text-h4 font-weight-bold text-cyan mt-1">
+                      {{ enrollmentsStats.pending }}
+                    </div>
+                  </div>
+                  <div class="kpi-icon-wrapper bg-cyan">
+                    <v-icon icon="mdi-clock-alert-outline" color="#00c2ff" size="28" />
+                  </div>
+                </div>
+                <div class="text-caption text-cyan-lighten-4 mt-3 d-flex align-center ga-1">
+                  <span class="pulse-indicator" :class="{ active: enrollmentsStats.pending > 0 }" />
+                  <span>{{ enrollmentsStats.pending > 0 ? 'Action required by staff' : 'All applications handled' }}</span>
+                </div>
+              </v-card>
+            </v-col>
+
+            <!-- Approved Candidates -->
+            <v-col cols="12" sm="6" lg="3">
+              <v-card class="kpi-card pa-4">
+                <div class="d-flex align-center justify-space-between">
+                  <div>
+                    <div class="text-caption text-grey-lighten-1 font-weight-medium text-uppercase tracking-wider">
+                      Approved
+                    </div>
+                    <div class="text-h4 font-weight-bold mt-1" style="color: #10b981;">
+                      {{ enrollmentsStats.approved }}
+                    </div>
+                  </div>
+                  <div class="kpi-icon-wrapper bg-emerald">
+                    <v-icon icon="mdi-check-decagram-outline" color="#10b981" size="28" />
+                  </div>
+                </div>
+                <div class="text-caption text-grey-lighten-2 mt-3 d-flex align-center ga-1">
+                  <v-icon icon="mdi-check-circle-outline" size="14" color="success" />
+                  <span>Accepted students</span>
+                </div>
+              </v-card>
+            </v-col>
+
+            <!-- Rejected / Closed -->
+            <v-col cols="12" sm="6" lg="3">
+              <v-card class="kpi-card pa-4">
+                <div class="d-flex align-center justify-space-between">
+                  <div>
+                    <div class="text-caption text-grey-lighten-1 font-weight-medium text-uppercase tracking-wider">
+                      Closed / Rejected
+                    </div>
+                    <div class="text-h4 font-weight-bold text-white mt-1">
+                      {{ enrollmentsStats.rejected }}
+                    </div>
+                  </div>
+                  <div class="kpi-icon-wrapper bg-indigo">
+                    <v-icon icon="mdi-close-octagon-outline" color="#818cf8" size="28" />
+                  </div>
+                </div>
+                <div class="text-caption text-grey-lighten-2 mt-3 d-flex align-center ga-1">
+                  <v-icon icon="mdi-archive-outline" size="14" color="#818cf8" />
+                  <span>Archived / unaccepted</span>
+                </div>
+              </v-card>
+            </v-col>
+          </v-row>
+
+          <!-- Enrollments Workspace Table Card -->
+          <v-card class="admin-table-card elevation-12">
+            <!-- Toolbar -->
+            <div class="table-toolbar pa-4 pa-md-6 d-flex flex-wrap align-center justify-space-between ga-4 border-b">
+              <!-- Filter Tabs -->
+              <div class="filter-tabs d-flex align-center ga-2 flex-wrap">
+                <v-btn
+                  :variant="enrollmentFilter === 'all' ? 'flat' : 'text'"
+                  :color="enrollmentFilter === 'all' ? '#00366F' : 'grey-lighten-1'"
+                  size="small"
+                  class="tab-btn font-weight-bold"
+                  @click="enrollmentFilter = 'all'"
+                >
+                  All ({{ enrollmentsStats.total }})
+                </v-btn>
+
+                <v-btn
+                  :variant="enrollmentFilter === 'pending' ? 'flat' : 'text'"
+                  :color="enrollmentFilter === 'pending' ? '#00366F' : 'grey-lighten-1'"
+                  size="small"
+                  class="tab-btn font-weight-bold d-flex align-center ga-1"
+                  @click="enrollmentFilter = 'pending'"
+                >
+                  <span>Pending</span>
+                  <v-chip
+                    v-if="enrollmentsStats.pending > 0"
+                    size="x-small"
+                    color="#00c2ff"
+                    variant="flat"
+                    class="font-weight-bold ml-1 text-slate-900"
+                  >
+                    {{ enrollmentsStats.pending }}
+                  </v-chip>
+                </v-btn>
+
+                <v-btn
+                  :variant="enrollmentFilter === 'approved' ? 'flat' : 'text'"
+                  :color="enrollmentFilter === 'approved' ? '#00366F' : 'grey-lighten-1'"
+                  size="small"
+                  class="tab-btn font-weight-bold"
+                  @click="enrollmentFilter = 'approved'"
+                >
+                  Approved ({{ enrollmentsStats.approved }})
+                </v-btn>
+
+                <v-btn
+                  :variant="enrollmentFilter === 'rejected' ? 'flat' : 'text'"
+                  :color="enrollmentFilter === 'rejected' ? '#00366F' : 'grey-lighten-1'"
+                  size="small"
+                  class="tab-btn font-weight-bold"
+                  @click="enrollmentFilter = 'rejected'"
+                >
+                  Rejected ({{ enrollmentsStats.rejected }})
+                </v-btn>
+              </div>
+
+              <!-- Search Field & Actions -->
+              <div class="d-flex align-center flex-grow-1 flex-md-grow-0 ga-3" style="min-width: 280px;">
+                <v-text-field
+                  v-model="enrollmentSearchQuery"
+                  placeholder="Search student, email, phone, course..."
+                  prepend-inner-icon="mdi-magnify"
+                  variant="outlined"
+                  density="compact"
+                  hide-details
+                  bg-color="#0B0F19"
+                  color="#0056b3"
+                  clearable
+                  class="search-input"
+                />
+
+                <v-menu location="bottom end">
+                  <template #activator="{ props }">
+                    <v-btn
+                      v-bind="props"
+                      icon="mdi-dots-vertical"
+                      variant="tonal"
+                      size="small"
+                      color="grey-lighten-1"
+                    />
+                  </template>
+                  <v-list class="action-dropdown" bg-color="#0e1726" elevation="8">
+                    <v-list-item
+                      prepend-icon="mdi-refresh"
+                      title="Refresh List"
+                      @click="fetchAdminEnrollments"
+                    />
+                    <v-list-item
+                      prepend-icon="mdi-download-outline"
+                      title="Export JSON"
+                      :disabled="enrollmentsList.length === 0"
+                      @click="exportEnrollmentsJson"
+                    />
+                  </v-list>
+                </v-menu>
+              </div>
+            </div>
+
+            <!-- Loading Indicator -->
+            <v-progress-linear v-if="isEnrollmentsLoading" indeterminate color="#00a8ff" height="3" />
+
+            <!-- Applications List -->
+            <div class="pa-4 pa-md-6">
+              <!-- Empty State -->
+              <div
+                v-if="!isEnrollmentsLoading && enrollmentsList.length === 0"
+                class="empty-state text-center py-12 px-4"
+              >
+                <div class="empty-icon-box mb-4">
+                  <v-icon icon="mdi-account-search-outline" size="56" color="#0056b3" />
+                </div>
+                <h3 class="text-h6 font-weight-bold text-white mb-2">No Applications Found</h3>
+                <p class="text-body-2 text-grey-lighten-1 max-w-md mx-auto mb-0">
+                  {{
+                    enrollmentSearchQuery
+                      ? `No applications matching "${enrollmentSearchQuery}".`
+                      : 'No student enrollment applications registered in this view.'
+                  }}
+                </p>
+              </div>
+
+              <!-- Applications Cards -->
+              <div v-else class="d-flex flex-column ga-3">
+                <v-card
+                  v-for="app in enrollmentsList"
+                  :key="app._id"
+                  class="submission-item-card pa-4"
+                  :class="{
+                    'submission-item-card--unread': app.status === 'pending',
+                    'enrollment-item-card--approved': app.status === 'approved'
+                  }"
+                  @click="openEnrollmentDetail(app)"
+                >
+                  <div class="d-flex flex-column flex-md-row align-start align-md-center justify-space-between ga-3">
+                    <!-- Left: Status Indicator & Student Info -->
+                    <div class="d-flex align-start ga-3 flex-grow-1" style="min-width: 0;">
+                      <div class="mt-1 flex-shrink-0">
+                        <span
+                          class="status-dot"
+                          :class="{
+                            'status-dot-pending': app.status === 'pending',
+                            'status-dot-approved': app.status === 'approved',
+                            'status-dot-rejected': app.status === 'rejected'
+                          }"
+                        />
+                      </div>
+
+                      <div class="flex-grow-1" style="min-width: 0;">
+                        <!-- Student Name & Status Chip & Course -->
+                        <div class="d-flex align-center flex-wrap ga-2 mb-1">
+                          <span class="font-weight-bold text-white text-subtitle-2">
+                            {{ app.name }}
+                          </span>
+
+                          <v-chip
+                            size="x-small"
+                            :color="
+                              app.status === 'approved'
+                                ? 'success'
+                                : app.status === 'pending'
+                                ? 'amber'
+                                : 'grey'
+                            "
+                            variant="flat"
+                            class="font-weight-bold"
+                          >
+                            {{ (app.status || 'pending').toUpperCase() }}
+                          </v-chip>
+
+                          <v-chip
+                            size="x-small"
+                            color="#00366F"
+                            variant="flat"
+                            class="text-cyan-lighten-3 font-weight-medium"
+                          >
+                            <v-icon
+                              :icon="app.selectedCourseId?.icon || 'mdi-school-outline'"
+                              size="12"
+                              class="mr-1"
+                            />
+                            {{ app.selectedCourseId?.title || app.courseTitle || 'Training Program' }}
+                          </v-chip>
+                        </div>
+
+                        <!-- Contact details: Email & Phone -->
+                        <div class="d-flex align-center flex-wrap ga-3 text-caption text-grey-lighten-1 mb-2">
+                          <a
+                            :href="`mailto:${app.email}`"
+                            class="sub-link d-flex align-center ga-1"
+                            @click.stop
+                          >
+                            <v-icon icon="mdi-email-outline" size="14" />
+                            <span>{{ app.email }}</span>
+                          </a>
+                          <a
+                            :href="`tel:${app.phone}`"
+                            class="sub-link d-flex align-center ga-1"
+                            @click.stop
+                          >
+                            <v-icon icon="mdi-phone-outline" size="14" />
+                            <span>{{ app.phone }}</span>
+                          </a>
+                        </div>
+
+                        <!-- Message snippet if provided -->
+                        <p v-if="app.message" class="text-caption text-slate-300 message-snippet mb-1">
+                          "{{ app.message }}"
+                        </p>
+
+                        <!-- Staff notes snippet if any -->
+                        <div v-if="app.adminNotes" class="text-caption text-amber-lighten-3 d-flex align-center ga-1">
+                          <v-icon icon="mdi-note-text-outline" size="13" />
+                          <span>Staff note: {{ app.adminNotes }}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Right: Date & Action Buttons -->
+                    <div class="d-flex align-center ga-2 flex-shrink-0 pt-2 pt-md-0 border-t border-t-md-0 w-100 w-md-auto justify-space-between justify-md-end">
+                      <span class="text-caption text-grey-lighten-1">
+                        {{ formatDate(app.date) }}
+                      </span>
+
+                      <div class="d-flex align-center ga-1">
+                        <!-- Quick Approve Button -->
+                        <v-tooltip v-if="app.status !== 'approved'" text="Approve Student" location="top">
+                          <template #activator="{ props }">
+                            <v-btn
+                              v-bind="props"
+                              icon="mdi-check-circle-outline"
+                              size="small"
+                              variant="tonal"
+                              color="success"
+                              @click.stop="updateEnrollmentStatus(app, 'approved')"
+                            />
+                          </template>
+                        </v-tooltip>
+
+                        <!-- Quick Reject Button -->
+                        <v-tooltip v-if="app.status !== 'rejected'" text="Reject / Close" location="top">
+                          <template #activator="{ props }">
+                            <v-btn
+                              v-bind="props"
+                              icon="mdi-close-circle-outline"
+                              size="small"
+                              variant="tonal"
+                              color="error"
+                              @click.stop="updateEnrollmentStatus(app, 'rejected')"
+                            />
+                          </template>
+                        </v-tooltip>
+
+                        <!-- View Details Modal -->
+                        <v-tooltip text="View Application & Notes" location="top">
+                          <template #activator="{ props }">
+                            <v-btn
+                              v-bind="props"
+                              icon="mdi-eye-outline"
+                              size="small"
+                              variant="tonal"
+                              color="#38bdf8"
+                              @click.stop="openEnrollmentDetail(app)"
+                            />
+                          </template>
+                        </v-tooltip>
+
+                        <!-- Delete Button -->
+                        <v-tooltip text="Delete Application" location="top">
+                          <template #activator="{ props }">
+                            <v-btn
+                              v-bind="props"
+                              icon="mdi-delete-outline"
+                              size="small"
+                              variant="tonal"
+                              color="error"
+                              @click.stop="confirmDeleteEnrollment(app)"
+                            />
+                          </template>
+                        </v-tooltip>
+                      </div>
+                    </div>
+                  </div>
+                </v-card>
+              </div>
+            </div>
+          </v-card>
+        </template>
       </v-container>
     </div>
 
@@ -2036,6 +2630,235 @@ onUnmounted(() => {
     </v-dialog>
 
     <!-- ========================================== -->
+    <!-- ENROLLMENT APPLICATION DETAILS MODAL       -->
+    <!-- ========================================== -->
+    <v-dialog v-model="isEnrollmentDetailOpen" max-width="680" scrollable>
+      <v-card v-if="selectedEnrollment" color="#0e1626" class="detail-dialog-card elevation-24">
+        <div class="detail-dialog-header pa-6 d-flex align-center justify-space-between border-b">
+          <div class="d-flex align-center ga-3">
+            <v-avatar color="#00366F" size="44" class="text-white font-weight-bold">
+              {{ (selectedEnrollment.name || 'ST').slice(0, 2).toUpperCase() }}
+            </v-avatar>
+            <div>
+              <div class="d-flex align-center ga-2">
+                <h3 class="text-h6 font-weight-bold text-white mb-0">{{ selectedEnrollment.name }}</h3>
+                <v-chip
+                  size="x-small"
+                  :color="
+                    selectedEnrollment.status === 'approved'
+                      ? 'success'
+                      : selectedEnrollment.status === 'pending'
+                      ? 'amber'
+                      : 'grey'
+                  "
+                  variant="flat"
+                  class="font-weight-bold"
+                >
+                  {{ (selectedEnrollment.status || 'pending').toUpperCase() }}
+                </v-chip>
+              </div>
+              <div class="text-caption text-cyan-lighten-3">
+                Applied on {{ formatDateFull(selectedEnrollment.date) }}
+              </div>
+            </div>
+          </div>
+
+          <v-btn icon="mdi-close" variant="text" size="small" color="grey-lighten-1" @click="isEnrollmentDetailOpen = false" />
+        </div>
+
+        <v-card-text class="pa-6">
+          <!-- Metadata Grid -->
+          <div class="metadata-grid pa-4 rounded mb-6">
+            <v-row class="gy-3">
+              <v-col cols="12" sm="6">
+                <div class="text-caption text-grey-lighten-1">Student Contact Email</div>
+                <div class="font-weight-medium text-white d-flex align-center ga-1 mt-1">
+                  <a :href="`mailto:${selectedEnrollment.email}`" class="sub-link">{{ selectedEnrollment.email }}</a>
+                </div>
+              </v-col>
+
+              <v-col cols="12" sm="6">
+                <div class="text-caption text-grey-lighten-1">Phone Number</div>
+                <div class="font-weight-medium text-white d-flex align-center ga-1 mt-1">
+                  <a :href="`tel:${selectedEnrollment.phone}`" class="sub-link">{{ selectedEnrollment.phone }}</a>
+                </div>
+              </v-col>
+
+              <v-col cols="12" sm="6">
+                <div class="text-caption text-grey-lighten-1">Training Program</div>
+                <div class="font-weight-medium text-cyan-lighten-2 mt-1 d-flex align-center ga-1">
+                  <v-icon :icon="selectedEnrollment.selectedCourseId?.icon || 'mdi-school-outline'" size="16" />
+                  <span>{{ selectedEnrollment.selectedCourseId?.title || selectedEnrollment.courseTitle }}</span>
+                </div>
+              </v-col>
+
+              <v-col cols="12" sm="6">
+                <div class="text-caption text-grey-lighten-1">Program Duration / Level</div>
+                <div class="font-weight-medium text-white mt-1">
+                  {{ selectedEnrollment.selectedCourseId?.duration || '12 Weeks' }} —
+                  {{ selectedEnrollment.selectedCourseId?.level || 'All Levels' }}
+                </div>
+              </v-col>
+            </v-row>
+          </div>
+
+          <!-- Student Message / Statement -->
+          <div class="mb-6">
+            <div class="text-caption font-weight-bold text-slate-300 mb-2 text-uppercase tracking-wider">
+              Student Statement / Background Notes
+            </div>
+            <div class="message-container pa-4 rounded">
+              <p class="text-body-2 text-slate-200 mb-0 whitespace-pre-wrap">
+                {{ selectedEnrollment.message || 'No additional statement provided with application.' }}
+              </p>
+            </div>
+          </div>
+
+          <!-- Staff Admission Review Notes -->
+          <div class="mb-2">
+            <div class="d-flex align-center justify-space-between mb-2">
+              <span class="text-caption font-weight-bold text-cyan-lighten-3 text-uppercase tracking-wider">
+                Staff / Admission Review Notes
+              </span>
+              <v-btn
+                size="x-small"
+                variant="tonal"
+                color="#00c2ff"
+                :loading="isSavingEnrollmentNotes"
+                @click="saveEnrollmentAdminNotes"
+              >
+                Save Notes
+              </v-btn>
+            </div>
+            <v-textarea
+              v-model="enrollmentAdminNotesInput"
+              rows="3"
+              placeholder="Add internal evaluation, interview status, phone screening outcome..."
+              variant="outlined"
+              color="#0056b3"
+              bg-color="#0B0F19"
+              density="comfortable"
+              hide-details
+            />
+          </div>
+        </v-card-text>
+
+        <v-card-actions class="pa-6 border-t d-flex align-center justify-space-between flex-wrap ga-3">
+          <div class="d-flex align-center ga-2">
+            <v-btn
+              v-if="selectedEnrollment.status !== 'approved'"
+              prepend-icon="mdi-check-circle-outline"
+              variant="tonal"
+              color="success"
+              size="small"
+              class="text-capitalize"
+              @click="updateEnrollmentStatus(selectedEnrollment, 'approved')"
+            >
+              Approve Student
+            </v-btn>
+
+            <v-btn
+              v-if="selectedEnrollment.status !== 'rejected'"
+              prepend-icon="mdi-close-circle-outline"
+              variant="tonal"
+              color="error"
+              size="small"
+              class="text-capitalize"
+              @click="updateEnrollmentStatus(selectedEnrollment, 'rejected')"
+            >
+              Reject / Close
+            </v-btn>
+
+            <v-btn
+              v-if="selectedEnrollment.status !== 'pending'"
+              prepend-icon="mdi-clock-outline"
+              variant="tonal"
+              color="amber"
+              size="small"
+              class="text-capitalize"
+              @click="updateEnrollmentStatus(selectedEnrollment, 'pending')"
+            >
+              Set to Pending
+            </v-btn>
+
+            <v-btn
+              prepend-icon="mdi-delete-outline"
+              variant="tonal"
+              color="error"
+              size="small"
+              class="text-capitalize"
+              @click="confirmDeleteEnrollment(selectedEnrollment)"
+            >
+              Delete
+            </v-btn>
+          </div>
+
+          <div class="d-flex align-center ga-2">
+            <v-btn
+              prepend-icon="mdi-phone"
+              variant="outlined"
+              color="#00c2ff"
+              size="small"
+              class="text-capitalize font-weight-bold"
+              :href="`tel:${selectedEnrollment.phone}`"
+            >
+              Call Candidate
+            </v-btn>
+
+            <v-btn
+              prepend-icon="mdi-email-outline"
+              variant="flat"
+              color="#00366F"
+              class="text-white text-capitalize font-weight-bold"
+              :href="`mailto:${selectedEnrollment.email}?subject=Next Challenge Training Enrollment: ${encodeURIComponent(selectedEnrollment.selectedCourseId?.title || selectedEnrollment.courseTitle)}`"
+              target="_blank"
+            >
+              Email {{ selectedEnrollment.name }}
+            </v-btn>
+          </div>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- ========================================== -->
+    <!-- ENROLLMENT DELETE CONFIRMATION MODAL        -->
+    <!-- ========================================== -->
+    <v-dialog v-model="isEnrollmentDeleteOpen" max-width="440">
+      <v-card color="#0e1626" class="delete-dialog-card elevation-24 pa-6">
+        <div class="d-flex align-center ga-3 mb-4">
+          <v-avatar color="red-darken-4" size="44">
+            <v-icon icon="mdi-alert-octagon-outline" color="red-lighten-2" size="28" />
+          </v-avatar>
+          <div>
+            <h3 class="text-h6 font-weight-bold text-white mb-0">Delete Enrollment?</h3>
+            <div class="text-caption text-grey-lighten-1">This action cannot be undone.</div>
+          </div>
+        </div>
+
+        <p class="text-body-2 text-slate-300 mb-6">
+          Are you sure you want to permanently remove the application for
+          <strong class="text-white">{{ enrollmentToDelete?.name }}</strong>
+          for <strong class="text-cyan-lighten-3">{{ enrollmentToDelete?.courseTitle }}</strong>?
+        </p>
+
+        <div class="d-flex align-center justify-end ga-3">
+          <v-btn variant="text" color="grey-lighten-1" @click="isEnrollmentDeleteOpen = false">
+            Cancel
+          </v-btn>
+          <v-btn
+            color="error"
+            variant="flat"
+            :loading="isDeletingEnrollment"
+            class="font-weight-bold text-capitalize"
+            @click="executeDeleteEnrollment"
+          >
+            Delete Application
+          </v-btn>
+        </div>
+      </v-card>
+    </v-dialog>
+
+    <!-- ========================================== -->
     <!-- TOAST NOTIFICATION                         -->
     <!-- ========================================== -->
     <v-snackbar
@@ -2381,5 +3204,24 @@ onUnmounted(() => {
 
 .ga-1-5 {
   gap: 6px;
+}
+
+/* Student Enrollments Admin Styling */
+.status-dot-pending {
+  background-color: #f59e0b;
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.6);
+}
+
+.status-dot-approved {
+  background-color: #10b981;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+}
+
+.status-dot-rejected {
+  background-color: #64748b;
+}
+
+.enrollment-item-card--approved {
+  border-left: 4px solid #10b981 !important;
 }
 </style>

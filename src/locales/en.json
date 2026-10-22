@@ -145,7 +145,10 @@
     "badge": "Curriculum & Academics",
     "titleHighlight": "Engineering Masterclasses",
     "titleEnd": "& Training Programs",
-    "subtitle": "Industry-aligned software training programs in Sétif, Algeria. Build production-grade skills through hands-on development in Full Stack Web, Enterprise ERP, and CMS platforms."
+    "subtitle": "Industry-aligned software training programs in Sétif, Algeria. Build production-grade skills through hands-on development in Full Stack Web, Enterprise ERP, and CMS platforms.",
+    "registerNow": "Register Now",
+    "askQuestion": "Have questions? Inquire via message",
+    "modalTitle": "Student Enrollment Application"
   },
   "capabilities": {
     "badge": "Technical Expertise",

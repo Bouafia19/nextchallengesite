@@ -1,20 +1,23 @@
-import express from 'express'
-import cors from 'cors'
+import dotenv from 'dotenv'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import dotenv from 'dotenv'
+
+// Ensure dotenv is initialized at the very top of the file before any database code runs
+dotenv.config()
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const rootDir = path.resolve(__dirname, '..')
 
-// Explicitly load .env from root directory and current directory
+// Explicitly load .env from root directory if present
 dotenv.config({ path: path.resolve(rootDir, '.env') })
-dotenv.config()
 
+import express from 'express'
+import cors from 'cors'
 import { connectDB, isDbConnected } from './db.js'
 import Contact from './models/Contact.js'
 import Course from './models/Course.js'
+import Enrollment from './models/Enrollment.js'
 import { requireAdminAuth } from './middleware/auth.js'
 
 const app = express()
@@ -234,6 +237,105 @@ app.post('/api/contact', rateLimiter, async (req, res) => {
   }
 })
 
+// POST /api/enroll - Public endpoint for student course enrollment applications
+app.post('/api/enroll', rateLimiter, async (req, res) => {
+  try {
+    if (!isDbConnected()) {
+      return res.status(503).json({
+        success: false,
+        message: 'Database temporarily unavailable. Please try again shortly or contact us at 0552 56 96 54.'
+      })
+    }
+
+    const { name, fullName, email, phone, selectedCourseId, courseId, message } = req.body || {}
+    const studentName = (name || fullName || '').trim()
+    const targetCourseId = selectedCourseId || courseId
+
+    // Validation
+    if (!studentName || studentName.length < 2) {
+      return res.status(400).json({
+        success: false,
+        message: 'Student name is required (minimum 2 characters).'
+      })
+    }
+
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
+    if (!email || typeof email !== 'string' || !emailRegex.test(email.trim())) {
+      return res.status(400).json({
+        success: false,
+        message: 'A valid email address is required.'
+      })
+    }
+
+    if (!phone || typeof phone !== 'string' || phone.trim().length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'A valid phone number is required (minimum 6 digits).'
+      })
+    }
+
+    if (!targetCourseId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please select a course to register for.'
+      })
+    }
+
+    // Verify course exists
+    let courseDoc = null
+    const isObjectId = /^[0-9a-fA-F]{24}$/.test(String(targetCourseId))
+    if (isObjectId) {
+      courseDoc = await Course.findById(targetCourseId).lean()
+    } else {
+      courseDoc = await Course.findOne({
+        $or: [{ slug: String(targetCourseId).toLowerCase() }, { title: String(targetCourseId) }]
+      }).lean()
+    }
+
+    if (!courseDoc) {
+      return res.status(404).json({
+        success: false,
+        message: 'The selected course program was not found.'
+      })
+    }
+
+    const newEnrollment = new Enrollment({
+      name: studentName.slice(0, 120),
+      email: email.trim().toLowerCase().slice(0, 150),
+      phone: phone.trim().slice(0, 50),
+      selectedCourseId: courseDoc._id,
+      courseTitle: courseDoc.title,
+      date: new Date(),
+      status: 'pending',
+      message: (message || '').trim().slice(0, 2000),
+      ip: getClientIp(req)
+    })
+
+    const savedDoc = await newEnrollment.save()
+    console.log(`[Student Enrollment] New application from "${savedDoc.name}" for "${savedDoc.courseTitle}" (ID: ${savedDoc._id})`)
+
+    return res.status(201).json({
+      success: true,
+      message: 'Your registration application has been submitted successfully! Our admissions team will reach out to you shortly.',
+      enrollment: {
+        id: savedDoc._id,
+        name: savedDoc.name,
+        email: savedDoc.email,
+        phone: savedDoc.phone,
+        courseTitle: savedDoc.courseTitle,
+        status: savedDoc.status,
+        date: savedDoc.date
+      }
+    })
+  } catch (err) {
+    console.error('[Enrollment Application Error]', err.message || err)
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to process course registration application. Please try again.'
+    })
+  }
+})
+
 // GET /api/courses - Public endpoint to retrieve active training courses
 app.get('/api/courses', async (req, res) => {
   try {
@@ -401,11 +503,12 @@ app.get('/api/admin/contacts/stats', requireAdminAuth, async (req, res) => {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 
-    const [total, unread, read, todayCount] = await Promise.all([
+    const [total, unread, read, todayCount, pendingEnrollments] = await Promise.all([
       Contact.countDocuments(),
       Contact.countDocuments({ readStatus: false }),
       Contact.countDocuments({ readStatus: true }),
-      Contact.countDocuments({ date: { $gte: today } })
+      Contact.countDocuments({ date: { $gte: today } }),
+      Enrollment.countDocuments({ status: 'pending' })
     ])
 
     return res.status(200).json({
@@ -414,7 +517,8 @@ app.get('/api/admin/contacts/stats', requireAdminAuth, async (req, res) => {
         total,
         unread,
         read,
-        today: todayCount
+        today: todayCount,
+        pendingEnrollments
       }
     })
   } catch (err) {
@@ -739,6 +843,150 @@ app.patch('/api/admin/courses/:id/toggle-active', requireAdminAuth, async (req, 
     return res.status(500).json({
       success: false,
       message: 'Failed to toggle course active status.'
+    })
+  }
+})
+
+/**
+ * -------------------------------------------------------------
+ * Secured Admin Student Enrollments API Routes
+ * -------------------------------------------------------------
+ */
+
+// GET /api/admin/enrollments - List student enrollment applications with filters & stats
+app.get('/api/admin/enrollments', requireAdminAuth, async (req, res) => {
+  try {
+    if (!isDbConnected()) {
+      return res.status(503).json({
+        success: false,
+        message: 'Database temporarily unavailable.'
+      })
+    }
+
+    const { status, search, courseId } = req.query
+    const filter = {}
+
+    if (status && ['pending', 'approved', 'rejected'].includes(status)) {
+      filter.status = status
+    }
+
+    if (courseId && /^[0-9a-fA-F]{24}$/.test(courseId)) {
+      filter.selectedCourseId = courseId
+    }
+
+    if (search && typeof search === 'string' && search.trim()) {
+      const searchRegex = new RegExp(search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i')
+      filter.$or = [
+        { name: searchRegex },
+        { email: searchRegex },
+        { phone: searchRegex },
+        { courseTitle: searchRegex },
+        { message: searchRegex }
+      ]
+    }
+
+    const [enrollments, totalCount, pendingCount, approvedCount, rejectedCount] = await Promise.all([
+      Enrollment.find(filter)
+        .populate('selectedCourseId', 'title icon badge duration level')
+        .sort({ date: -1 })
+        .lean(),
+      Enrollment.countDocuments(),
+      Enrollment.countDocuments({ status: 'pending' }),
+      Enrollment.countDocuments({ status: 'approved' }),
+      Enrollment.countDocuments({ status: 'rejected' })
+    ])
+
+    return res.status(200).json({
+      success: true,
+      count: enrollments.length,
+      totalCount,
+      pendingCount,
+      approvedCount,
+      rejectedCount,
+      enrollments
+    })
+  } catch (err) {
+    console.error('[Admin Enrollments Error]', err.message || err)
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve student enrollments.'
+    })
+  }
+})
+
+// PATCH /api/admin/enrollments/:id/status - Update enrollment status & admin notes
+app.patch('/api/admin/enrollments/:id/status', requireAdminAuth, async (req, res) => {
+  try {
+    const { id } = req.params
+    const { status, adminNotes } = req.body || {}
+
+    const updateFields = {}
+    if (status) {
+      if (!['pending', 'approved', 'rejected'].includes(status)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid status value. Must be "pending", "approved", or "rejected".'
+        })
+      }
+      updateFields.status = status
+    }
+
+    if (typeof adminNotes === 'string') {
+      updateFields.adminNotes = adminNotes.trim().slice(0, 2000)
+    }
+
+    const updated = await Enrollment.findByIdAndUpdate(
+      id,
+      { $set: updateFields },
+      { new: true, runValidators: true }
+    ).populate('selectedCourseId', 'title icon badge duration level')
+
+    if (!updated) {
+      return res.status(404).json({
+        success: false,
+        message: 'Enrollment application not found.'
+      })
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: `Enrollment status updated to "${updated.status}".`,
+      enrollment: updated
+    })
+  } catch (err) {
+    console.error('[Admin Enrollment Status Error]', err.message || err)
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to update enrollment status.'
+    })
+  }
+})
+
+// DELETE /api/admin/enrollments/:id - Delete an enrollment application
+app.delete('/api/admin/enrollments/:id', requireAdminAuth, async (req, res) => {
+  try {
+    const { id } = req.params
+    const deleted = await Enrollment.findByIdAndDelete(id)
+
+    if (!deleted) {
+      return res.status(404).json({
+        success: false,
+        message: 'Enrollment application not found.'
+      })
+    }
+
+    const totalCount = await Enrollment.countDocuments()
+
+    return res.status(200).json({
+      success: true,
+      message: 'Enrollment application deleted successfully.',
+      totalCount
+    })
+  } catch (err) {
+    console.error('[Admin Enrollment Delete Error]', err.message || err)
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to delete enrollment application.'
     })
   }
 })

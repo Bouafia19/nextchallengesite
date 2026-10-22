@@ -1,37 +1,37 @@
-import mongoose from 'mongoose'
+import dotenv from 'dotenv'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import dotenv from 'dotenv'
 
-// Ensure environment variables are loaded regardless of how node was invoked
+// Ensure dotenv is initialized at the very top of the file before any database code runs
+dotenv.config()
+
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const rootDir = path.resolve(__dirname, '..')
 
+// Also check project root .env if present
 dotenv.config({ path: path.resolve(rootDir, '.env') })
-dotenv.config()
+
+import mongoose from 'mongoose'
 
 /**
- * Sanitize and validate MongoDB / Atlas connection strings
+ * Safely mask sensitive credentials in MongoDB / Atlas connection string
  */
-function getSanitizedMongoUri() {
-  const rawUri =
-    process.env.MONGODB_URI ||
-    process.env.MONGO_URI ||
-    process.env.DATABASE_URL ||
-    'mongodb://127.0.0.1:27017/nextchallenge'
-
-  // Strip wrapping single or double quotes, whitespace, and carriage returns
-  let cleanUri = String(rawUri).trim().replace(/^["']|["']$/g, '').trim()
-
-  return cleanUri
+function maskMongoUri(uri) {
+  if (!uri || typeof uri !== 'string') return ''
+  return uri.replace(/\/\/([^:]+):([^@]+)@/, '//$1:*****@')
 }
 
 /**
  * MongoDB Atlas & Local connection helper with resilient reconnects
  */
 export async function connectDB() {
-  const uri = getSanitizedMongoUri()
+  // Strictly prioritize process.env.MONGODB_URI, falling back to localhost only if undefined
+  const rawUri = process.env.MONGODB_URI
+  const uri = (rawUri && typeof rawUri === 'string' && rawUri.trim())
+    ? rawUri.trim().replace(/^["']|["']$/g, '').trim()
+    : 'mongodb://127.0.0.1:27017/nextchallenge'
+
   const dbName = process.env.MONGODB_DB_NAME || 'nextchallenge'
 
   // Prevent multiple connection attempts if already connected or connecting
@@ -57,17 +57,22 @@ export async function connectDB() {
       console.warn('[MongoDB] Connection disconnected. Attempting automatic reconnection...')
     })
 
-    // Mask credentials for logging
-    const maskedUri = uri.replace(/\/\/([^:]+):([^@]+)@/, '//$1:*****@')
+    // Print safely masked version of the URI right before connection
+    const maskedUri = maskMongoUri(uri)
     console.log(`[MongoDB] Initializing connection to: ${maskedUri}`)
 
-    await mongoose.connect(uri, {
-      dbName,
+    const connectionOptions = {
       serverSelectionTimeoutMS: 10000,
       socketTimeoutMS: 45000,
       autoIndex: true,
       maxPoolSize: 10
-    })
+    }
+
+    if (dbName) {
+      connectionOptions.dbName = dbName
+    }
+
+    await mongoose.connect(uri, connectionOptions)
 
     return mongoose.connection
   } catch (error) {
@@ -79,3 +84,5 @@ export async function connectDB() {
 export function isDbConnected() {
   return mongoose.connection.readyState === 1
 }
+
+export default connectDB

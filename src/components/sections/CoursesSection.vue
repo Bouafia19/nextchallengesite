@@ -164,6 +164,84 @@ const filteredCourses = computed(() => {
   )
 })
 
+// Registration Modal State
+const isRegisterModalOpen = ref(false)
+const selectedCourse = ref(null)
+const isSubmitting = ref(false)
+const registerError = ref('')
+const registrationSuccess = ref(false)
+const registerFormRef = ref(null)
+
+const registerForm = ref({
+  name: '',
+  email: '',
+  phone: '',
+  selectedCourseId: '',
+  message: ''
+})
+
+const courseSelectOptions = computed(() =>
+  courses.value.map((c) => ({
+    title: `${c.title} (${c.duration || 'Program'})`,
+    _id: c._id
+  }))
+)
+
+const openRegisterModal = (course) => {
+  selectedCourse.value = course
+  registerForm.value.selectedCourseId = course._id
+  registerError.value = ''
+  registrationSuccess.value = false
+  isRegisterModalOpen.value = true
+}
+
+const closeRegisterModal = () => {
+  isRegisterModalOpen.value = false
+  setTimeout(() => {
+    registrationSuccess.value = false
+    registerError.value = ''
+    registerForm.value = {
+      name: '',
+      email: '',
+      phone: '',
+      selectedCourseId: selectedCourse.value?._id || '',
+      message: ''
+    }
+  }, 300)
+}
+
+const onCourseSelectionChange = (courseId) => {
+  const found = courses.value.find((c) => c._id === courseId)
+  if (found) {
+    selectedCourse.value = found
+  }
+}
+
+const submitRegistration = async () => {
+  registerError.value = ''
+  isSubmitting.value = true
+
+  try {
+    const res = await fetch('/api/enroll', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(registerForm.value)
+    })
+
+    const data = await res.json().catch(() => ({}))
+
+    if (!res.ok || !data.success) {
+      throw new Error(data.message || 'Failed to submit registration application.')
+    }
+
+    registrationSuccess.value = true
+  } catch (err) {
+    registerError.value = err.message || 'An unexpected error occurred. Please try again.'
+  } finally {
+    isSubmitting.value = false
+  }
+}
+
 // Trigger enrollment interest in contact section
 const enrollInCourse = (course) => {
   window.dispatchEvent(
@@ -357,23 +435,211 @@ onMounted(() => {
             </div>
 
             <!-- Card Bottom CTA Action -->
-            <div class="pa-6 pt-0">
+            <div class="pa-6 pt-0 d-flex flex-column ga-2">
               <v-btn
                 block
                 size="large"
                 color="#00366F"
                 class="enroll-btn font-weight-bold text-white d-flex align-center justify-center ga-2"
-                prepend-icon="mdi-send-outline"
+                prepend-icon="mdi-account-plus-outline"
+                @click="openRegisterModal(course)"
+              >
+                <span>{{ t('courses.registerNow', 'Register Now') }}</span>
+                <v-icon icon="mdi-arrow-right" size="18" class="ml-1" />
+              </v-btn>
+
+              <v-btn
+                block
+                variant="text"
+                size="small"
+                color="grey-lighten-1"
+                class="text-caption font-weight-medium text-none"
+                prepend-icon="mdi-chat-question-outline"
                 @click="enrollInCourse(course)"
               >
-                Inquire & Enroll
-                <v-icon icon="mdi-arrow-right" size="18" class="ml-1" />
+                {{ t('courses.askQuestion', 'Have questions? Inquire via message') }}
               </v-btn>
             </div>
           </v-card>
         </v-col>
       </v-row>
     </v-container>
+
+    <!-- ========================================== -->
+    <!-- STUDENT REGISTRATION APPLICATION MODAL     -->
+    <!-- ========================================== -->
+    <v-dialog v-model="isRegisterModalOpen" max-width="620" scrollable>
+      <v-card color="#0e1626" class="register-modal-card elevation-24">
+        <!-- Header -->
+        <div class="register-modal-header pa-6 d-flex align-center justify-space-between border-b">
+          <div class="d-flex align-center ga-3">
+            <v-avatar color="#00366F" size="46" class="text-white">
+              <v-icon :icon="selectedCourse?.icon || 'mdi-school-outline'" color="#00c2ff" size="26" />
+            </v-avatar>
+            <div>
+              <div class="text-caption font-weight-bold text-cyan-lighten-3 text-uppercase tracking-wider">
+                {{ t('courses.modalTitle', 'Student Enrollment Application') }}
+              </div>
+              <h3 class="text-h6 font-weight-bold text-white mb-0">
+                {{ selectedCourse?.title || 'Program Registration' }}
+              </h3>
+            </div>
+          </div>
+          <v-btn icon="mdi-close" variant="text" size="small" color="grey-lighten-1" @click="closeRegisterModal" />
+        </div>
+
+        <!-- Content -->
+        <v-card-text class="pa-6">
+          <!-- Success State -->
+          <div v-if="registrationSuccess" class="text-center py-8">
+            <v-avatar color="rgba(16, 185, 129, 0.15)" size="72" class="mb-4 border-emerald">
+              <v-icon icon="mdi-check-decagram" color="#10b981" size="44" />
+            </v-avatar>
+            <h3 class="text-h5 font-weight-bold text-white mb-2">Application Submitted!</h3>
+            <p class="text-body-2 text-slate-300 max-w-md mx-auto mb-6 line-height-relaxed">
+              Thank you, <strong class="text-white">{{ registerForm.name }}</strong>! Your enrollment request for
+              <strong class="text-cyan-lighten-3">{{ selectedCourse?.title }}</strong> has been registered with status
+              <span class="text-amber-lighten-2 font-weight-bold">PENDING</span>.
+              Our academic advisors in Sétif will review your application and contact you at
+              <strong class="text-white">{{ registerForm.phone }}</strong> shortly.
+            </p>
+            <v-btn
+              color="#00366F"
+              variant="flat"
+              class="text-white font-weight-bold px-8 text-capitalize"
+              @click="closeRegisterModal"
+            >
+              Done
+            </v-btn>
+          </div>
+
+          <!-- Registration Form -->
+          <v-form v-else ref="registerFormRef" @submit.prevent="submitRegistration">
+            <!-- Error Alert -->
+            <v-alert
+              v-if="registerError"
+              type="error"
+              variant="tonal"
+              density="comfortable"
+              closable
+              class="mb-4"
+              @click:close="registerError = ''"
+            >
+              {{ registerError }}
+            </v-alert>
+
+            <!-- Course Selection -->
+            <div class="mb-4">
+              <label class="text-caption font-weight-bold text-slate-300 mb-1 d-block">
+                Selected Training Track *
+              </label>
+              <v-select
+                v-model="registerForm.selectedCourseId"
+                :items="courseSelectOptions"
+                item-title="title"
+                item-value="_id"
+                variant="outlined"
+                density="comfortable"
+                color="#00c2ff"
+                bg-color="#0B0F19"
+                hide-details
+                prepend-inner-icon="mdi-school"
+                @update:model-value="onCourseSelectionChange"
+              />
+            </div>
+
+            <v-row class="gy-3">
+              <!-- Student Full Name -->
+              <v-col cols="12" sm="6">
+                <label class="text-caption font-weight-bold text-slate-300 mb-1 d-block">
+                  Full Name (Nom & Prénom) *
+                </label>
+                <v-text-field
+                  v-model="registerForm.name"
+                  placeholder="e.g. Yassine Mansouri"
+                  variant="outlined"
+                  density="comfortable"
+                  color="#00c2ff"
+                  bg-color="#0B0F19"
+                  hide-details
+                  prepend-inner-icon="mdi-account-outline"
+                  required
+                />
+              </v-col>
+
+              <!-- Phone Number -->
+              <v-col cols="12" sm="6">
+                <label class="text-caption font-weight-bold text-slate-300 mb-1 d-block">
+                  Phone Number (Téléphone) *
+                </label>
+                <v-text-field
+                  v-model="registerForm.phone"
+                  placeholder="e.g. 0552 56 96 54"
+                  variant="outlined"
+                  density="comfortable"
+                  color="#00c2ff"
+                  bg-color="#0B0F19"
+                  hide-details
+                  prepend-inner-icon="mdi-phone-outline"
+                  required
+                />
+              </v-col>
+
+              <!-- Email Address -->
+              <v-col cols="12">
+                <label class="text-caption font-weight-bold text-slate-300 mb-1 d-block">
+                  Email Address (Email de contact) *
+                </label>
+                <v-text-field
+                  v-model="registerForm.email"
+                  type="email"
+                  placeholder="e.g. student@example.com"
+                  variant="outlined"
+                  density="comfortable"
+                  color="#00c2ff"
+                  bg-color="#0B0F19"
+                  hide-details
+                  prepend-inner-icon="mdi-email-outline"
+                  required
+                />
+              </v-col>
+
+              <!-- Optional Background / Goals -->
+              <v-col cols="12">
+                <label class="text-caption font-weight-bold text-slate-300 mb-1 d-block">
+                  Prior Experience or Specific Goals (Optional)
+                </label>
+                <v-textarea
+                  v-model="registerForm.message"
+                  rows="3"
+                  placeholder="Tell us about your background, programming interests, or scheduling availability..."
+                  variant="outlined"
+                  density="comfortable"
+                  color="#00c2ff"
+                  bg-color="#0B0F19"
+                  hide-details
+                />
+              </v-col>
+            </v-row>
+
+            <div class="d-flex align-center justify-end ga-3 mt-6 pt-4 border-t">
+              <v-btn variant="text" color="grey-lighten-1" @click="closeRegisterModal">
+                Cancel
+              </v-btn>
+              <v-btn
+                color="#00366F"
+                variant="flat"
+                class="text-white font-weight-bold px-6 text-capitalize"
+                :loading="isSubmitting"
+                type="submit"
+              >
+                Submit Application
+              </v-btn>
+            </div>
+          </v-form>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
   </section>
 </template>
 
@@ -501,5 +767,27 @@ onMounted(() => {
 
 .ga-1-5 {
   gap: 6px;
+}
+
+/* Registration Modal Dialog Styling */
+:global(.register-modal-card),
+:deep(.register-modal-card),
+.register-modal-card {
+  background: #0e1626 !important;
+  border: 1px solid rgba(0, 54, 111, 0.6) !important;
+  border-radius: 16px !important;
+  color: #f1f5f9 !important;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), 0 0 30px rgba(0, 54, 111, 0.3) !important;
+}
+
+:global(.register-modal-header),
+:deep(.register-modal-header),
+.register-modal-header {
+  background: linear-gradient(135deg, #00366F 0%, #061b36 100%) !important;
+  border-bottom: 1px solid rgba(0, 86, 179, 0.3) !important;
+}
+
+.border-emerald {
+  border: 1px solid rgba(16, 185, 129, 0.4);
 }
 </style>
