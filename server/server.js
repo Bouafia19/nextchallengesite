@@ -155,8 +155,8 @@ app.get('/health', (req, res) => {
   const dbStatus = isDbConnected() ? 'connected' : 'disconnected'
   const err = getLastMongoError()
 
-  res.status(dbStatus === 'connected' ? 200 : 503).json({
-    status: 'ok',
+  res.status(200).json({
+    status: dbStatus === 'connected' ? 'ok' : 'degraded',
     service: 'nextchallengesite-unified',
     domain: 'nextchallenge.tech',
     database: dbStatus,
