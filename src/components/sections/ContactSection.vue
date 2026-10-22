@@ -82,14 +82,6 @@ const handleSubmit = async () => {
     const data = await response.json().catch(() => ({}))
 
     if (!response.ok) {
-      if (response.status === 503 || (data.message && data.message.includes('SMTP'))) {
-        throw new Error(
-          t('contact.alerts.smtpUnavailable', {
-            email: siteConfig.email,
-            phone: siteConfig.phone
-          })
-        )
-      }
       throw new Error(data.message || t('contact.alerts.errorTitle'))
     }
 
@@ -103,12 +95,7 @@ const handleSubmit = async () => {
     formData.message = ''
     if (formRef.value) formRef.value.resetValidation()
   } catch (err) {
-    errorMessage.value =
-      err.message ||
-      t('contact.alerts.smtpUnavailable', {
-        email: siteConfig.email,
-        phone: siteConfig.phone
-      })
+    errorMessage.value = err.message || t('contact.alerts.errorTitle')
   } finally {
     isLoading.value = false
   }

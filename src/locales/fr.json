@@ -8,6 +8,7 @@
     "home": "Accueil",
     "services": "Services",
     "products": "Produits",
+    "courses": "Formations",
     "capabilities": "Compétences",
     "whyUs": "Pourquoi Nous",
     "about": "À Propos",
@@ -139,6 +140,12 @@
         ]
       }
     }
+  },
+  "courses": {
+    "badge": "Formations & Certifications",
+    "titleHighlight": "Masterclasses d'Ingénierie",
+    "titleEnd": "& Programmes Pratiques",
+    "subtitle": "Programmes de formation logicielle orientés industrie à Sétif, Algérie. Développez des compétences de niveau production grâce à des projets concrets en Web Full Stack, ERP Odoo et CMS Joomla."
   },
   "capabilities": {
     "badge": "Expertise Technique",

@@ -32,6 +32,14 @@ onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll)
 })
 
+const emit = defineEmits(['open-admin'])
+
+const openAdminPortal = () => {
+  drawer.value = false
+  emit('open-admin')
+  window.dispatchEvent(new CustomEvent('open-admin-portal'))
+}
+
 const navigateTo = (href) => {
   drawer.value = false
   const target = document.querySelector(href)
@@ -83,6 +91,23 @@ const navigateTo = (href) => {
             size="20"
           />
         </v-btn>
+
+        <!-- Admin Portal Direct Access -->
+        <v-tooltip text="Admin Portal" location="bottom">
+          <template #activator="{ props }">
+            <v-btn
+              v-bind="props"
+              icon
+              variant="text"
+              density="comfortable"
+              aria-label="Admin Portal"
+              color="#38bdf8"
+              @click="openAdminPortal"
+            >
+              <v-icon icon="mdi-shield-lock-outline" size="20" />
+            </v-btn>
+          </template>
+        </v-tooltip>
 
         <!-- Prominent CTA: Let's Talk -->
         <v-btn
@@ -171,6 +196,7 @@ const navigateTo = (href) => {
                   item.key === 'home' ? 'mdi-home-outline' :
                   item.key === 'services' ? 'mdi-briefcase-outline' :
                   item.key === 'products' ? 'mdi-cube-outline' :
+                  item.key === 'courses' ? 'mdi-school-outline' :
                   item.key === 'capabilities' ? 'mdi-lightning-bolt-outline' :
                   item.key === 'whyUs' ? 'mdi-shield-star-outline' :
                   item.key === 'about' ? 'mdi-information-outline' : 'mdi-email-outline'
@@ -182,6 +208,24 @@ const navigateTo = (href) => {
             </template>
             <v-list-item-title class="font-weight-semibold text-body-1">
               {{ t('nav.' + item.key) }}
+            </v-list-item-title>
+          </v-list-item>
+          <!-- Admin Portal Link in Mobile Drawer -->
+          <v-list-item
+            rounded="lg"
+            class="mb-1 mobile-nav-item"
+            @click="openAdminPortal"
+          >
+            <template #prepend>
+              <v-icon
+                icon="mdi-shield-lock-outline"
+                :class="isRtl ? 'ml-3' : 'mr-3'"
+                size="20"
+                color="#38bdf8"
+              />
+            </template>
+            <v-list-item-title class="font-weight-semibold text-body-1 text-cyan-lighten-2">
+              Admin Portal
             </v-list-item-title>
           </v-list-item>
         </v-list>

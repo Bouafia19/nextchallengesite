@@ -7,6 +7,13 @@ import { siteConfig } from '@/config/site.js'
 const { t, tm, locale } = useI18n()
 const isRtl = computed(() => locale.value === 'ar')
 
+const emit = defineEmits(['open-admin'])
+
+const openAdmin = () => {
+  emit('open-admin')
+  window.dispatchEvent(new CustomEvent('open-admin-portal'))
+}
+
 const scrollTo = (href) => {
   const target = document.querySelector(href)
   if (target) {
@@ -139,11 +146,16 @@ const scrollTo = (href) => {
         <div class="text-caption text-medium-emphasis text-center text-sm-left">
           &copy; 2026 Next Challenge. {{ t('footer.allRightsReserved') }}
         </div>
-        <div class="d-flex align-center ga-6 text-caption text-medium-emphasis">
+        <div class="d-flex align-center flex-wrap ga-4 ga-md-6 text-caption text-medium-emphasis">
           <span class="mono-font ltr-text" dir="ltr">{{ siteConfig.legalName }}</span>
           <span>&bull;</span>
           <a :href="siteConfig.siteUrl" class="text-medium-emphasis text-decoration-none ltr-text" dir="ltr">
             nextchallenge.tech
+          </a>
+          <span>&bull;</span>
+          <a href="#admin" class="text-medium-emphasis text-decoration-none d-flex align-center ga-1 admin-portal-link" @click.prevent="openAdmin">
+            <v-icon icon="mdi-shield-lock-outline" size="14" color="secondary" />
+            <span>Admin Portal</span>
           </a>
         </div>
       </div>

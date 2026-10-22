@@ -1,19 +1,27 @@
 import express from 'express'
 import cors from 'cors'
-import nodemailer from 'nodemailer'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import dotenv from 'dotenv'
-
-dotenv.config()
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const rootDir = path.resolve(__dirname, '..')
 
+// Explicitly load .env from root directory and current directory
+dotenv.config({ path: path.resolve(rootDir, '.env') })
+dotenv.config()
+
+import { connectDB, isDbConnected } from './db.js'
+import Contact from './models/Contact.js'
+import Course from './models/Course.js'
+import { requireAdminAuth } from './middleware/auth.js'
+
 const app = express()
 const PORT = process.env.PORT || 5000
-const RECEIVER_EMAIL = process.env.CONTACT_RECEIVER_EMAIL || 'nextchallenge2021@gmail.com'
+
+// Connect to MongoDB Atlas or local instance
+connectDB()
 
 // Disable x-powered-by header
 app.disable('x-powered-by')
@@ -25,7 +33,7 @@ app.use((req, res, next) => {
   res.setHeader('X-XSS-Protection', '1; mode=block')
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin')
   res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
-  
+
   // HSTS when on HTTPS
   if (req.secure || req.headers['x-forwarded-proto'] === 'https') {
     res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload')
@@ -33,47 +41,70 @@ app.use((req, res, next) => {
   next()
 })
 
-// Production CORS Configuration
+// CORS Configuration - Permissive for dev and secured for production
 const allowedOrigins = [
   'https://nextchallenge.tech',
   'https://www.nextchallenge.tech',
   process.env.FRONTEND_URL
 ].filter(Boolean)
 
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      // Allow requests with no origin (e.g. mobile apps, curl, server-to-server, same-origin)
-      if (!origin) return callback(null, true)
-      
-      // Allow localhost on any port for local development & automated auditing
-      if (/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
-        return callback(null, true)
-      }
+const corsOptions = {
+  origin: (origin, callback) => {
+    // Allow requests with no origin (e.g. mobile apps, curl, server-to-server, same-origin)
+    if (!origin) return callback(null, true)
 
-      if (
-        allowedOrigins.includes(origin) ||
-        origin.endsWith('.onrender.com') ||
-        origin.endsWith('.nextchallenge.tech')
-      ) {
-        return callback(null, true)
-      }
+    // Allow localhost on any port for local development & automated auditing
+    if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
+      return callback(null, true)
+    }
 
-      // Deny CORS gracefully without throwing an unhandled 500 error
-      return callback(null, false)
-    },
-    methods: ['GET', 'POST', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Accept']
-  })
-)
+    if (
+      allowedOrigins.includes(origin) ||
+      origin.endsWith('.onrender.com') ||
+      origin.endsWith('.nextchallenge.tech') ||
+      origin.endsWith('.vercel.app') ||
+      origin.endsWith('.netlify.app')
+    ) {
+      return callback(null, true)
+    }
+
+    // In non-production environments, allow origin
+    if (process.env.NODE_ENV !== 'production') {
+      return callback(null, true)
+    }
+
+    return callback(null, false)
+  },
+  methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: [
+    'Content-Type',
+    'Accept',
+    'x-admin-key',
+    'X-Admin-Key',
+    'x-api-key',
+    'X-Api-Key',
+    'admin-api-key',
+    'Admin-Api-Key',
+    'Authorization',
+    'authorization',
+    'Origin',
+    'X-Requested-With',
+    'Cache-Control',
+    'Pragma'
+  ],
+  credentials: true
+}
+
+app.use(cors(corsOptions))
+app.options('*', cors(corsOptions)) // Explicit preflight handling for all routes
 
 // Body Parser with strict payload limit
-app.use(express.json({ limit: '32kb' }))
+app.use(express.json({ limit: '64kb' }))
 
-// In-Memory Rate Limiter (5 requests per 10 minutes per IP)
+// In-Memory Rate Limiter (10 requests per 10 minutes per IP for contact submissions)
 const rateLimitMap = new Map()
 const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000 // 10 minutes
-const MAX_REQUESTS_PER_WINDOW = 5
+const MAX_REQUESTS_PER_WINDOW = 10
 
 function getClientIp(req) {
   const forwarded = req.headers['x-forwarded-for']
@@ -107,21 +138,11 @@ function rateLimiter(req, res, next) {
   if (record.count > MAX_REQUESTS_PER_WINDOW) {
     return res.status(429).json({
       success: false,
-      message: 'Too many message requests. Please wait a few minutes before trying again.'
+      message: 'Too many submissions received. Please wait a few minutes before submitting again.'
     })
   }
 
   next()
-}
-
-// HTML escape helper to prevent HTML injection in emails
-function escapeHtml(str) {
-  return String(str || '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;')
 }
 
 // Health Check
@@ -130,161 +151,594 @@ app.get('/health', (req, res) => {
     status: 'ok',
     service: 'nextchallengesite-unified',
     domain: 'nextchallenge.tech',
+    database: isDbConnected() ? 'connected' : 'disconnected',
     timestamp: new Date().toISOString()
   })
 })
 
-// Contact Form Endpoint
+/**
+ * -------------------------------------------------------------
+ * Public API Routes
+ * -------------------------------------------------------------
+ */
+
+// POST /api/contact - Saves inquiry submissions directly to MongoDB
 app.post('/api/contact', rateLimiter, async (req, res) => {
-  const { fullName, email, phone, company, subject, message } = req.body || {}
-
-  // Validation
-  if (!fullName || typeof fullName !== 'string' || fullName.trim().length < 2) {
-    return res.status(400).json({
-      success: false,
-      message: 'Full name is required (minimum 2 characters).'
-    })
-  }
-
-  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
-  if (!email || typeof email !== 'string' || !emailRegex.test(email.trim())) {
-    return res.status(400).json({
-      success: false,
-      message: 'A valid email address is required.'
-    })
-  }
-
-  if (!subject || typeof subject !== 'string' || subject.trim().length < 2) {
-    return res.status(400).json({
-      success: false,
-      message: 'Subject is required.'
-    })
-  }
-
-  if (!message || typeof message !== 'string' || message.trim().length < 10) {
-    return res.status(400).json({
-      success: false,
-      message: 'Message is required (minimum 10 characters).'
-    })
-  }
-
-  const rawName = fullName.trim().slice(0, 100)
-  const rawEmail = email.trim().slice(0, 120)
-  const rawPhone = (phone || 'Not provided').trim().slice(0, 50)
-  const rawCompany = (company || 'Not provided').trim().slice(0, 100)
-  const rawSubject = subject.trim().slice(0, 150)
-  const rawMessage = message.trim().slice(0, 5000)
-
-  // Escaped for HTML email
-  const safeName = escapeHtml(rawName)
-  const safeEmail = escapeHtml(rawEmail)
-  const safePhone = escapeHtml(rawPhone)
-  const safeCompany = escapeHtml(rawCompany)
-  const safeSubject = escapeHtml(rawSubject)
-  const safeMessage = escapeHtml(rawMessage)
-
-  const mailOptions = {
-    from: process.env.SMTP_FROM || `"Next Challenge Web" <${process.env.SMTP_USER || 'no-reply@nextchallenge.tech'}>`,
-    to: RECEIVER_EMAIL,
-    replyTo: rawEmail,
-    subject: `[Next Challenge Inquiry] ${rawSubject} — from ${rawName}`,
-    text: `New inquiry received from Next Challenge website (https://nextchallenge.tech):
-
-Full Name: ${rawName}
-Email: ${rawEmail}
-Phone: ${rawPhone}
-Company: ${rawCompany}
-Subject: ${rawSubject}
-
-Message:
-${rawMessage}
-
----
-Delivered to: ${RECEIVER_EMAIL}
-Client IP: ${getClientIp(req)}
-Timestamp: ${new Date().toISOString()}
-`,
-    html: `
-      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 620px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 14px; background-color: #ffffff; color: #1e293b;">
-        <div style="border-bottom: 2px solid #5b54e8; padding-bottom: 14px; margin-bottom: 20px;">
-          <h2 style="margin: 0; color: #5b54e8; font-size: 22px;">Next Challenge — New Website Inquiry</h2>
-          <p style="margin: 4px 0 0; color: #64748b; font-size: 13px;">Submitted via <strong>https://nextchallenge.tech</strong></p>
-        </div>
-
-        <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
-          <tr>
-            <td style="padding: 8px 0; color: #64748b; font-size: 14px; width: 130px;"><strong>Sender Name:</strong></td>
-            <td style="padding: 8px 0; color: #0f172a; font-size: 14px; font-weight: 600;">${safeName}</td>
-          </tr>
-          <tr>
-            <td style="padding: 8px 0; color: #64748b; font-size: 14px;"><strong>Email Address:</strong></td>
-            <td style="padding: 8px 0; color: #0f172a; font-size: 14px;"><a href="mailto:${safeEmail}" style="color: #5b54e8; text-decoration: none; font-weight: 600;">${safeEmail}</a></td>
-          </tr>
-          <tr>
-            <td style="padding: 8px 0; color: #64748b; font-size: 14px;"><strong>Phone:</strong></td>
-            <td style="padding: 8px 0; color: #0f172a; font-size: 14px;">${safePhone}</td>
-          </tr>
-          <tr>
-            <td style="padding: 8px 0; color: #64748b; font-size: 14px;"><strong>Company:</strong></td>
-            <td style="padding: 8px 0; color: #0f172a; font-size: 14px;">${safeCompany}</td>
-          </tr>
-          <tr>
-            <td style="padding: 8px 0; color: #64748b; font-size: 14px;"><strong>Subject:</strong></td>
-            <td style="padding: 8px 0; color: #0f172a; font-size: 14px; font-weight: 600;">${safeSubject}</td>
-          </tr>
-        </table>
-
-        <div style="background-color: #f8fafc; border-left: 4px solid #5b54e8; padding: 16px; border-radius: 6px; margin-bottom: 24px;">
-          <strong style="display: block; margin-bottom: 8px; color: #334155; font-size: 14px;">Project Details / Message:</strong>
-          <p style="margin: 0; white-space: pre-line; line-height: 1.6; color: #1e293b; font-size: 14px;">${safeMessage}</p>
-        </div>
-
-        <div style="font-size: 12px; color: #94a3b8; text-align: center; border-top: 1px solid #e2e8f0; padding-top: 14px;">
-          This message was securely submitted on <strong>https://nextchallenge.tech</strong> and forwarded to <strong>${RECEIVER_EMAIL}</strong>.
-        </div>
-      </div>
-    `
-  }
-
-  // SMTP Transporter Configuration
-  const smtpHost = process.env.SMTP_HOST || 'smtp.gmail.com'
-  const smtpPort = Number(process.env.SMTP_PORT) || 465
-  const smtpSecure = process.env.SMTP_SECURE !== undefined ? process.env.SMTP_SECURE === 'true' : smtpPort === 465
-  const smtpUser = process.env.SMTP_USER || process.env.MAIL_USER
-  const smtpPass = process.env.SMTP_PASS || process.env.MAIL_PASS
-  const hasSmtpConfig = Boolean(smtpUser && smtpPass)
-
-  if (!hasSmtpConfig) {
-    console.warn('[Contact API] SMTP credentials not configured (SMTP_USER/SMTP_PASS missing). Email not sent.')
-    return res.status(503).json({
-      success: false,
-      message: 'Email service is currently awaiting SMTP configuration. Please reach us directly at nextchallenge2021@gmail.com or call 0552 56 96 54.'
-    })
-  }
-
   try {
-    const transporter = nodemailer.createTransport({
-      host: smtpHost,
-      port: smtpPort,
-      secure: smtpSecure,
-      auth: {
-        user: smtpUser,
-        pass: smtpPass
+    const { fullName, name, email, phone, company, subject, message } = req.body || {}
+
+    const senderName = (fullName || name || '').trim()
+
+    // Validation
+    if (!senderName || senderName.length < 2) {
+      return res.status(400).json({
+        success: false,
+        message: 'Name is required (minimum 2 characters).'
+      })
+    }
+
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
+    if (!email || typeof email !== 'string' || !emailRegex.test(email.trim())) {
+      return res.status(400).json({
+        success: false,
+        message: 'A valid email address is required.'
+      })
+    }
+
+    if (!message || typeof message !== 'string' || message.trim().length < 5) {
+      return res.status(400).json({
+        success: false,
+        message: 'Message is required (minimum 5 characters).'
+      })
+    }
+
+    const cleanSubject = (subject || 'General Inquiry').trim().slice(0, 150)
+    const cleanPhone = (phone || '').trim().slice(0, 50)
+    const cleanCompany = (company || '').trim().slice(0, 100)
+    const cleanMessage = message.trim().slice(0, 5000)
+
+    // Save submission to MongoDB
+    const newSubmission = new Contact({
+      name: senderName.slice(0, 120),
+      email: email.trim().toLowerCase().slice(0, 150),
+      phone: cleanPhone,
+      company: cleanCompany,
+      subject: cleanSubject,
+      message: cleanMessage,
+      date: new Date(),
+      readStatus: false,
+      ip: getClientIp(req)
+    })
+
+    const savedDoc = await newSubmission.save()
+
+    console.log(`[Contact Submission] Stored message from "${savedDoc.name}" <${savedDoc.email}> (ID: ${savedDoc._id})`)
+
+    return res.status(201).json({
+      success: true,
+      message: 'Thank you! Your message has been received and saved successfully.',
+      data: {
+        id: savedDoc._id,
+        name: savedDoc.name,
+        email: savedDoc.email,
+        date: savedDoc.date,
+        readStatus: savedDoc.readStatus
       }
     })
+  } catch (err) {
+    console.error('[Contact Submission Error]', err.message || err)
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to save contact submission. Please try again or reach us at 0552 56 96 54.'
+    })
+  }
+})
 
-    const info = await transporter.sendMail(mailOptions)
-    console.log(`[Contact API] Message delivered successfully to ${RECEIVER_EMAIL} (Message ID: ${info.messageId})`)
+// GET /api/courses - Public endpoint to retrieve active training courses
+app.get('/api/courses', async (req, res) => {
+  try {
+    if (!isDbConnected()) {
+      return res.status(503).json({
+        success: false,
+        message: 'Database temporarily unavailable. Please try again shortly.'
+      })
+    }
+
+    const { tech, search } = req.query
+    const filter = { isActive: true }
+
+    if (tech && typeof tech === 'string') {
+      filter.technologies = { $in: [new RegExp(tech.trim(), 'i')] }
+    }
+
+    if (search && typeof search === 'string' && search.trim()) {
+      const searchRegex = new RegExp(search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i')
+      filter.$or = [
+        { title: searchRegex },
+        { description: searchRegex },
+        { technologies: searchRegex }
+      ]
+    }
+
+    const courses = await Course.find(filter)
+      .sort({ order: 1, createdAt: 1 })
+      .lean()
 
     return res.status(200).json({
       success: true,
-      message: 'Your message has been delivered to Next Challenge successfully.'
+      count: courses.length,
+      courses
     })
   } catch (err) {
-    console.error('[SMTP Delivery Error]', err.message || err)
+    console.error('[Public Courses API Error]', err.message || err)
     return res.status(500).json({
       success: false,
-      message: 'Failed to deliver message via mail server. Please contact us directly by phone at 0552 56 96 54 or email nextchallenge2021@gmail.com.'
+      message: 'Failed to retrieve training curriculum.'
+    })
+  }
+})
+
+// GET /api/courses/:idOrSlug - Public single course view
+app.get('/api/courses/:idOrSlug', async (req, res) => {
+  try {
+    const { idOrSlug } = req.params
+    const isObjectId = /^[0-9a-fA-F]{24}$/.test(idOrSlug)
+
+    const query = isObjectId
+      ? { _id: idOrSlug }
+      : { slug: idOrSlug.toLowerCase() }
+
+    const course = await Course.findOne(query).lean()
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        message: 'Course not found.'
+      })
+    }
+
+    return res.status(200).json({
+      success: true,
+      course
+    })
+  } catch (err) {
+    console.error('[Course Detail Error]', err.message || err)
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve course details.'
+    })
+  }
+})
+
+/**
+ * -------------------------------------------------------------
+ * Secured Admin API Routes
+ * -------------------------------------------------------------
+ */
+
+// POST /api/admin/verify - Verify admin credentials
+app.post('/api/admin/verify', requireAdminAuth, (req, res) => {
+  return res.status(200).json({
+    success: true,
+    message: 'Admin authorization key verified successfully.'
+  })
+})
+
+// GET /api/admin/contacts - Fetch submissions with filtering, search, and pagination
+app.get('/api/admin/contacts', requireAdminAuth, async (req, res) => {
+  try {
+    if (!isDbConnected()) {
+      return res.status(503).json({
+        success: false,
+        message: 'Database currently disconnected. MongoDB is initializing connection.'
+      })
+    }
+
+    const { status, search, page = 1, limit = 100, sort = '-date' } = req.query
+
+    const filter = {}
+
+    if (status === 'unread') {
+      filter.readStatus = false
+    } else if (status === 'read') {
+      filter.readStatus = true
+    }
+
+    if (search && typeof search === 'string' && search.trim()) {
+      const escapedSearch = search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      const regex = new RegExp(escapedSearch, 'i')
+      filter.$or = [
+        { name: regex },
+        { email: regex },
+        { subject: regex },
+        { message: regex },
+        { company: regex },
+        { phone: regex }
+      ]
+    }
+
+    const pageNum = Math.max(1, parseInt(page, 10) || 1)
+    const limitNum = Math.min(500, Math.max(1, parseInt(limit, 10) || 100))
+    const skip = (pageNum - 1) * limitNum
+
+    const [contacts, totalCount, unreadCount] = await Promise.all([
+      Contact.find(filter)
+        .sort(sort)
+        .skip(skip)
+        .limit(limitNum)
+        .lean(),
+      Contact.countDocuments(filter),
+      Contact.countDocuments({ readStatus: false })
+    ])
+
+    return res.status(200).json({
+      success: true,
+      count: contacts.length,
+      totalCount,
+      unreadCount,
+      page: pageNum,
+      totalPages: Math.ceil(totalCount / limitNum) || 1,
+      contacts
+    })
+  } catch (err) {
+    console.error('[Admin Contacts API Error]', err.message || err)
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve contact submissions from database.'
+    })
+  }
+})
+
+// GET /api/admin/contacts/stats - Fetch summary counts
+app.get('/api/admin/contacts/stats', requireAdminAuth, async (req, res) => {
+  try {
+    if (!isDbConnected()) {
+      return res.status(503).json({
+        success: false,
+        message: 'Database currently disconnected. MongoDB is initializing connection.'
+      })
+    }
+
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
+    const [total, unread, read, todayCount] = await Promise.all([
+      Contact.countDocuments(),
+      Contact.countDocuments({ readStatus: false }),
+      Contact.countDocuments({ readStatus: true }),
+      Contact.countDocuments({ date: { $gte: today } })
+    ])
+
+    return res.status(200).json({
+      success: true,
+      stats: {
+        total,
+        unread,
+        read,
+        today: todayCount
+      }
+    })
+  } catch (err) {
+    console.error('[Admin Contacts Stats Error]', err.message || err)
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve contact statistics.'
+    })
+  }
+})
+
+// PATCH /api/admin/contacts/:id/read - Toggle or set readStatus
+app.patch('/api/admin/contacts/:id/read', requireAdminAuth, async (req, res) => {
+  try {
+    const { id } = req.params
+    const { readStatus } = req.body || {}
+
+    const contact = await Contact.findById(id)
+    if (!contact) {
+      return res.status(404).json({
+        success: false,
+        message: 'Submission not found.'
+      })
+    }
+
+    contact.readStatus = typeof readStatus === 'boolean' ? readStatus : !contact.readStatus
+    await contact.save()
+
+    const unreadCount = await Contact.countDocuments({ readStatus: false })
+
+    return res.status(200).json({
+      success: true,
+      message: `Marked as ${contact.readStatus ? 'read' : 'unread'}.`,
+      contact,
+      unreadCount
+    })
+  } catch (err) {
+    console.error('[Admin Read Update Error]', err.message || err)
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to update read status.'
+    })
+  }
+})
+
+// PATCH /api/admin/contacts/mark-all-read - Mark all unread submissions as read
+app.patch('/api/admin/contacts/mark-all-read', requireAdminAuth, async (req, res) => {
+  try {
+    const result = await Contact.updateMany({ readStatus: false }, { $set: { readStatus: true } })
+    return res.status(200).json({
+      success: true,
+      message: 'All unread submissions have been marked as read.',
+      modifiedCount: result.modifiedCount,
+      unreadCount: 0
+    })
+  } catch (err) {
+    console.error('[Admin Mark All Read Error]', err.message || err)
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to update submissions.'
+    })
+  }
+})
+
+// DELETE /api/admin/contacts/:id - Remove a submission
+app.delete('/api/admin/contacts/:id', requireAdminAuth, async (req, res) => {
+  try {
+    const { id } = req.params
+    const deleted = await Contact.findByIdAndDelete(id)
+
+    if (!deleted) {
+      return res.status(404).json({
+        success: false,
+        message: 'Submission not found.'
+      })
+    }
+
+    const unreadCount = await Contact.countDocuments({ readStatus: false })
+    const totalCount = await Contact.countDocuments()
+
+    return res.status(200).json({
+      success: true,
+      message: 'Submission deleted successfully.',
+      unreadCount,
+      totalCount
+    })
+  } catch (err) {
+    console.error('[Admin Delete Error]', err.message || err)
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to delete submission.'
+    })
+  }
+})
+
+/**
+ * -------------------------------------------------------------
+ * Secured Admin Courses API Routes (/api/admin/courses)
+ * -------------------------------------------------------------
+ */
+
+// GET /api/admin/courses - Fetch all courses with stats
+app.get('/api/admin/courses', requireAdminAuth, async (req, res) => {
+  try {
+    if (!isDbConnected()) {
+      return res.status(503).json({
+        success: false,
+        message: 'Database currently disconnected.'
+      })
+    }
+
+    const { status, search } = req.query
+    const filter = {}
+
+    if (status === 'active') {
+      filter.isActive = true
+    } else if (status === 'inactive') {
+      filter.isActive = false
+    }
+
+    if (search && typeof search === 'string' && search.trim()) {
+      const searchRegex = new RegExp(search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i')
+      filter.$or = [
+        { title: searchRegex },
+        { description: searchRegex },
+        { technologies: searchRegex }
+      ]
+    }
+
+    const [courses, totalCount, activeCount] = await Promise.all([
+      Course.find(filter).sort({ order: 1, createdAt: -1 }).lean(),
+      Course.countDocuments(),
+      Course.countDocuments({ isActive: true })
+    ])
+
+    return res.status(200).json({
+      success: true,
+      count: courses.length,
+      totalCount,
+      activeCount,
+      inactiveCount: totalCount - activeCount,
+      courses
+    })
+  } catch (err) {
+    console.error('[Admin Courses GET Error]', err.message || err)
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve courses.'
+    })
+  }
+})
+
+// POST /api/admin/courses - Create a new course
+app.post('/api/admin/courses', requireAdminAuth, async (req, res) => {
+  try {
+    const { title, description, syllabus, technologies, icon, duration, badge, level, order, isActive } = req.body || {}
+
+    if (!title || typeof title !== 'string' || title.trim().length < 2) {
+      return res.status(400).json({
+        success: false,
+        message: 'Course title is required (minimum 2 characters).'
+      })
+    }
+
+    if (!description || typeof description !== 'string' || description.trim().length < 5) {
+      return res.status(400).json({
+        success: false,
+        message: 'Course description is required (minimum 5 characters).'
+      })
+    }
+
+    // Normalize technologies
+    let techArray = []
+    if (Array.isArray(technologies)) {
+      techArray = technologies.map(t => String(t).trim()).filter(Boolean)
+    } else if (typeof technologies === 'string' && technologies.trim()) {
+      techArray = technologies.split(',').map(t => t.trim()).filter(Boolean)
+    }
+
+    // Normalize syllabus
+    let syllabusData = []
+    if (Array.isArray(syllabus)) {
+      syllabusData = syllabus
+    } else if (typeof syllabus === 'string' && syllabus.trim()) {
+      syllabusData = [syllabus.trim()]
+    }
+
+    const course = new Course({
+      title: title.trim(),
+      description: description.trim(),
+      syllabus: syllabusData,
+      technologies: techArray,
+      icon: (icon || 'mdi-school-outline').trim(),
+      duration: (duration || '').trim(),
+      badge: (badge || 'Training Program').trim(),
+      level: (level || 'All Levels').trim(),
+      order: Number(order) || 0,
+      isActive: isActive !== undefined ? Boolean(isActive) : true
+    })
+
+    await course.save()
+    console.log(`[Admin Course Created] "${course.title}" (ID: ${course._id})`)
+
+    return res.status(201).json({
+      success: true,
+      message: 'Course program created successfully.',
+      course
+    })
+  } catch (err) {
+    console.error('[Admin Course Create Error]', err.message || err)
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to create course.'
+    })
+  }
+})
+
+// PUT /api/admin/courses/:id - Update course
+app.put('/api/admin/courses/:id', requireAdminAuth, async (req, res) => {
+  try {
+    const { id } = req.params
+    const { title, description, syllabus, technologies, icon, duration, badge, level, order, isActive } = req.body || {}
+
+    const course = await Course.findById(id)
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        message: 'Course not found.'
+      })
+    }
+
+    if (title && typeof title === 'string') course.title = title.trim()
+    if (description && typeof description === 'string') course.description = description.trim()
+    if (icon && typeof icon === 'string') course.icon = icon.trim()
+    if (duration !== undefined) course.duration = String(duration).trim()
+    if (badge !== undefined) course.badge = String(badge).trim()
+    if (level !== undefined) course.level = String(level).trim()
+    if (order !== undefined) course.order = Number(order) || 0
+    if (isActive !== undefined) course.isActive = Boolean(isActive)
+
+    if (technologies !== undefined) {
+      if (Array.isArray(technologies)) {
+        course.technologies = technologies.map(t => String(t).trim()).filter(Boolean)
+      } else if (typeof technologies === 'string') {
+        course.technologies = technologies.split(',').map(t => t.trim()).filter(Boolean)
+      }
+    }
+
+    if (syllabus !== undefined) {
+      course.syllabus = Array.isArray(syllabus) ? syllabus : [String(syllabus).trim()]
+    }
+
+    await course.save()
+    console.log(`[Admin Course Updated] "${course.title}" (ID: ${course._id})`)
+
+    return res.status(200).json({
+      success: true,
+      message: 'Course program updated successfully.',
+      course
+    })
+  } catch (err) {
+    console.error('[Admin Course Update Error]', err.message || err)
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to update course.'
+    })
+  }
+})
+
+// DELETE /api/admin/courses/:id - Delete course
+app.delete('/api/admin/courses/:id', requireAdminAuth, async (req, res) => {
+  try {
+    const { id } = req.params
+    const deleted = await Course.findByIdAndDelete(id)
+
+    if (!deleted) {
+      return res.status(404).json({
+        success: false,
+        message: 'Course not found.'
+      })
+    }
+
+    console.log(`[Admin Course Deleted] "${deleted.title}" (ID: ${deleted._id})`)
+    const totalCount = await Course.countDocuments()
+
+    return res.status(200).json({
+      success: true,
+      message: 'Course program deleted successfully.',
+      totalCount
+    })
+  } catch (err) {
+    console.error('[Admin Course Delete Error]', err.message || err)
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to delete course.'
+    })
+  }
+})
+
+// PATCH /api/admin/courses/:id/toggle-active - Toggle active status
+app.patch('/api/admin/courses/:id/toggle-active', requireAdminAuth, async (req, res) => {
+  try {
+    const { id } = req.params
+    const course = await Course.findById(id)
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        message: 'Course not found.'
+      })
+    }
+
+    course.isActive = !course.isActive
+    await course.save()
+
+    return res.status(200).json({
+      success: true,
+      message: `Course "${course.title}" is now ${course.isActive ? 'active' : 'inactive'}.`,
+      course
+    })
+  } catch (err) {
+    console.error('[Admin Course Toggle Error]', err.message || err)
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to toggle course active status.'
     })
   }
 })
@@ -317,5 +771,5 @@ app.get('*', (req, res) => {
 app.listen(PORT, () => {
   console.log(`[Next Challenge Server] Running on port ${PORT}`)
   console.log(`[Next Challenge Server] Target Domain: https://nextchallenge.tech`)
-  console.log(`[Next Challenge Server] Inquiries target: ${RECEIVER_EMAIL}`)
+  console.log(`[Next Challenge Server] Database backend: MongoDB active`)
 })

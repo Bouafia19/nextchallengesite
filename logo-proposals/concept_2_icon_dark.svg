@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%">
+      <defs>
+        <linearGradient id="c2-navy-grad" x1="0%" y1="100%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#0284C7"/>
+          <stop offset="100%" stop-color="#38BDF8"/>
+        </linearGradient>
+        <linearGradient id="c2-cyan-grad" x1="0%" y1="100%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#00D2FF"/>
+          <stop offset="100%" stop-color="#38BDF8"/>
+        </linearGradient>
+      </defs>
+      <!-- Base Enterprise Chevron (Facing Forward & Up) -->
+      <path d="M 14,76 L 42,22 Q 45,16 52,16 L 56,16 Q 60,16 60,20 L 46,76 Q 44,82 38,82 L 20,82 Q 14,82 14,76 Z" fill="url(#c2-navy-grad)"/>
+      <!-- Ascending Quantum Chevron (Thrusting Forward, Forming Dynamic 'N') -->
+      <path d="M 44,78 L 74,24 Q 78,16 86,22 L 92,26 Q 96,30 92,36 L 64,84 Q 60,90 52,86 L 46,82 Q 42,80 44,78 Z" fill="url(#c2-cyan-grad)"/>
+      <!-- Intersecting Speed Blade -->
+      <polygon points="34,48 66,24 58,54 26,78" fill="#00E5FF" opacity="0.9"/>
+      <!-- Forward Arrow Notch Tip -->
+      <polygon points="86,22 96,28 88,36" fill="#FFFFFF" opacity="0.95"/>
+    </svg>

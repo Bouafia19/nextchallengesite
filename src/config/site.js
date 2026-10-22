@@ -36,6 +36,7 @@ export const siteConfig = {
     { key: 'home', label: 'Home', href: '#home' },
     { key: 'services', label: 'Services', href: '#services' },
     { key: 'products', label: 'Products', href: '#products' },
+    { key: 'courses', label: 'Courses', href: '#courses' },
     { key: 'capabilities', label: 'Capabilities', href: '#capabilities' },
     { key: 'whyUs', label: 'Why Us', href: '#why-us' },
     { key: 'about', label: 'About Us', href: '#about' },
