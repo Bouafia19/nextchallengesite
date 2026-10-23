@@ -149,58 +149,100 @@ All 5 tourism and commerce storefronts hosted on Render were verified accessible
 - **Safety Tarball:** Verified intact at `/home/next/next projects/BackUps/recovery_20261023_SAFETY_COPY.tar.gz` (319 KB).
 
 ### D. Phase 2 Least-Privilege Role Verification Audit (Empirical Results)
-- **Verification Timestamp:** `2026-10-23T18:21:00Z`
-- **Audit Tool:** `mongosh db.runCommand({ connectionStatus: 1, showPrivileges: true })`
+- **Latest Verification Timestamp:** `2026-10-23T19:55:05Z`
+- **Audit Tool:** Direct MongoDB Wire Protocol Inspection (`verify_phase2_roles.py`)
 - **Observed Roles:**
   - `fleetora_app`: `[{ "role": "atlasAdmin", "db": "admin" }]` (Still retains `atlasAdmin`)
   - `touriva_app`: `[{ "role": "atlasAdmin", "db": "admin" }]` (Still retains `atlasAdmin`)
-- **Isolation Status:** `FAIL (NOT YET REMEDIATED)`. Both users can still query `nextchallenge` and perform cluster-wide actions because `atlasAdmin` remains assigned.
-- **Root Cause Analysis:** In the MongoDB Atlas Web UI under *Database User Privileges*, adding a custom database privilege row does not automatically remove the pre-existing `Atlas admin` privilege row. The `Atlas admin` row must be explicitly deleted (using the trash can icon 🗑️) or the privilege type toggled strictly to *Specific privileges* without retaining the built-in role.
+- **Empirical Isolation Status:** `FAIL (NOT YET SCOPED IN ATLAS UI)`.
+  - `fleetora_app` was able to query forbidden databases `touriva` and `nextchallenge`.
+  - `touriva_app` was able to query forbidden databases `fleetora` and `nextchallenge`.
 - **Application Health Baseline:**
-  - Next Challenge: HTTP 200 `connected` (`timestamp: 2026-10-23T18:20:29Z`)
-  - Fleetora API: HTTP 200 `UP / connected` (`timestamp: 2026-10-23T18:20:29Z`)
-  - Touriva API: HTTP 200 `ok / connected` (`timestamp: 2026-10-23T18:20:29Z`)
-  - Next Challenge Courses: HTTP 200 (Count: 3 active courses)
-  - Fleetora Terms (`/api/terms`): HTTP 200 (Count: 3)
-  - Touriva Wilayas (`/api/wilayas`): HTTP 200 (Count: 57)
-  - Touriva Sites (`/api/sites`): HTTP 200 (Count: 18)
-  - Touriva Products (`/api/products`): HTTP 200 (Count: 31)
+  - Next Challenge: HTTP 200 `connected`
+  - Fleetora API: HTTP 200 `UP / connected`
+  - Touriva API: HTTP 200 `ok / connected`
+  - All applications remain 100% operational with 0 downtime.
+- **Root Cause & Atlas Console Requirement:**
+  MongoDB Atlas manages database users through its control plane. In the Atlas Web UI modal, adding a "Specific Privilege" row does *not* automatically replace the pre-existing "Built-in Role" (`Atlas admin`). The `Atlas admin` row must be explicitly deleted by clicking the trash can icon (🗑️) next to *Atlas admin*, or the privilege toggle must be switched strictly to *Specific privileges*.
 
 ---
 
-## 6. Prioritized Remediation Plan
+## 6. Exact MongoDB Atlas Least-Privilege Action (User Intervention)
 
-| Priority | Action | Target System | Risk / Downtime | Status |
-| :--- | :--- | :--- | :---: | :--- |
-| **P0 (Urgent)** | Update Render `MONGODB_URI` with verified credential | Next Challenge / Render | Zero | **COMPLETED & VERIFIED** (Deploy `dep-dbdppfvb9u1s73b3rlfg`) |
-| **P1 (High)** | Scope `fleetora_app` and `touriva_app` roles down from `atlasAdmin` | MongoDB Atlas Console | Zero | **IN PROGRESS (User action in Atlas UI required)** |
-| **P2 (High)** | Remediate dependencies (`tar`, `ws`, `socket.io`, `nodemailer`, `path-to-regexp`) | Fleetora & Touriva Backends | Zero | **COMPLETED & VERIFIED (0 audit vulnerabilities, 100% tests pass)** |
-| **P3 (Medium)** | Next Challenge asset, UX, and accessibility enhancements | Next Challenge Frontend | Zero | **COMPLETED & VERIFIED (100% pass on all 10 audit suites)** |
-| **P4 (Low)** | Restrict `CORS_ORIGINS` from `*` to specific frontend URLs | Fleetora & Touriva Render Env | Zero | Ready for production deployment |
+Because Atlas database users cannot be modified via MongoDB wire protocol commands (`db.updateUser()`) without Atlas Cloud credentials or web console access, this single scoping action requires 2 minutes in the Atlas Web UI:
+
+### Atlas Console Direct Link:
+`https://cloud.mongodb.com/v2/62f7d2fa2aef25447facd251#/security/database/users`
+
+### Step 1: Scope `fleetora_app`
+1. Locate `fleetora_app` in the Database Users list and click **Edit** (under Actions).
+2. Under **Built-in Role**: Click the **trash can icon (🗑️)** next to `Atlas admin` to remove administrative access.
+3. Under **Specific Privileges**:
+   - Role: Select `readWrite`
+   - Database: Enter `fleetora`
+   - Collection: Leave empty (applies to all collections in `fleetora`)
+4. Click **Update User**.
+
+### Step 2: Scope `touriva_app`
+1. Locate `touriva_app` in the Database Users list and click **Edit** (under Actions).
+2. Under **Built-in Role**: Click the **trash can icon (🗑️)** next to `Atlas admin` to remove administrative access.
+3. Under **Specific Privileges**:
+   - Privilege 1: Role `readWrite`, Database `touriva`, Collection empty.
+   - Click **Add Additional Privilege**.
+   - Privilege 2: Role `readWrite`, Database `touriva_shop`, Collection empty.
+4. Click **Update User**.
+
+> [!CAUTION]
+> Do NOT edit or touch the `next` user.
+> Do NOT drop, change passwords, or recreate the users. Only modify the assigned privileges.
 
 ---
 
-## 7. Remediation Execution Evidence & Verification
+## 7. Comprehensive Security Remediation Execution Evidence
 
-### A. Fleetora Backend Dependency Remediation (`fleetora/backend`)
-- **Dedicated Branch:** `fix/security-deps-20261023` (Commit `f58ff56`)
-- **Key Modifications:**
-  - Upgraded `bcrypt` from `^5.1.1` to `^6.0.0` (matching Touriva), completely eliminating `@mapbox/node-pre-gyp` and the Critical `tar` vulnerability (hardlink path traversal).
-  - Upgraded `socket.io` to `^4.8.4` and added `overrides` for `ws: ^8.21.3`, `engine.io: ^6.6.11`, `socket.io-parser: ^4.2.7`, and `socket.io-adapter: ^2.5.8`.
-- **Audit Outcome:** `npm audit` went from **6 vulnerabilities (1 Critical, 4 High)** to **0 vulnerabilities**.
-- **Automated Test Results:** `npm test` (`node --test tests/*.test.js`) executed **12 tests passed, 0 failed**. Confirmed real-time Socket.io driver-location broadcasts, JWT authentication, and vehicle dispatching logic.
+### A. Fleetora Backend (`fleetora/backend`)
+- **Dedicated Branch:** `fix/security-deps-20261023`
+- **Latest Commit:** `c91e9fe` (`fix(security): remove sensitive user credential logging and enforce 7-day JWT expiration`)
+- **Key Remediations:**
+  1. **Dependency Vulnerability Remediation (Commit `f58ff56`):**
+     - Upgraded `bcrypt` from `^5.1.1` to `^6.0.0`, eliminating `@mapbox/node-pre-gyp` and Critical `tar` vulnerability (hardlink path traversal).
+     - Upgraded `socket.io` to `^4.8.4` with overrides for `ws: ^8.21.3`, `engine.io: ^6.6.11`, `socket.io-parser: ^4.2.7`, and `socket.io-adapter: ^2.5.8`.
+     - `npm audit`: Reduced from 6 vulnerabilities (1 Critical, 4 High) to **0 vulnerabilities**.
+  2. **Sensitive Credential Logging Elimination (Commit `c91e9fe`):**
+     - In `models/User.js`: Removed `console.log` statements in `loginPhone` (lines 162-163, 169-170, 181, 185, 191, 195) that were dumping user phone numbers, bcrypt password hashes, and complete user profile documents to standard output and Render production logs.
+  3. **JWT Session Expiration (Commit `c91e9fe`):**
+     - In `controllers/usersController.js`: Added `{ expiresIn: '7d' }` to `jwt.sign()`, preventing infinitely valid authentication tokens.
+- **Verification Evidence:**
+  - Automated test suite (`node --test tests/*.test.js`): **12 passed, 0 failed**.
+  - Output audit: Zero credentials or sensitive data printed during authentication.
 
-### B. Touriva Backend Dependency Remediation (`touriva/backend`)
-- **Dedicated Branch:** `fix/security-deps-20261023` (Commit `126c947`)
-- **Key Modifications:**
-  - Upgraded `nodemailer` from `^7.0.13` to `^10.2.1`, resolving SSRF and quadratic `addressparser` DoS advisories.
-  - Added dependency override `path-to-regexp: ^8.4.2` satisfying Express 5 / `router@2.2.0`, resolving ReDoS sequential optional group vulnerabilities.
-- **Audit Outcome:** `npm audit` went from **2 High severity vulnerabilities** to **0 vulnerabilities**.
-- **Automated Test Results:** `npm test` (Jest) executed **5 test suites passed, 27 tests passed, 0 failed**. Confirmed user authentication, trips booking, shop products, and tourism services APIs.
+### B. Touriva Backend (`touriva/backend`)
+- **Dedicated Branch:** `fix/security-deps-20261023`
+- **Latest Commit:** `a5b1257` (`fix(security): require authentication on GET /api/orders and enforce 7-day JWT expiration`)
+- **Key Remediations:**
+  1. **Dependency Vulnerability Remediation (Commit `126c947`):**
+     - Upgraded `nodemailer` from `^7.0.13` to `^10.2.1` (GHSA-p6gq-j5cr-w38f, GHSA-2x7j-588g-ccc2).
+     - Added override `path-to-regexp: ^8.4.2` for Express 5 router (GHSA-j3q9-mxjg-w52f ReDoS).
+     - `npm audit`: Reduced from 2 High vulnerabilities to **0 vulnerabilities**.
+  2. **Critical Broken Authentication Fix (Commit `a5b1257`):**
+     - In `routes/orders.js`: Discovered that `router.get('/', getOrders)` was declared *before* `router.use(requireAuth)`. This permitted any unauthenticated caller on the public internet to download all 11 customer orders, phone numbers, and pricing details via `GET /api/orders`.
+     - Moved `router.get('/', getOrders)` below `router.use(requireAuth)`.
+  3. **JWT Session Expiration (Commit `a5b1257`):**
+     - In `controllers/usersController.js`: Added `{ expiresIn: '7d' }` to `jwt.sign()`, enforcing 7-day token expiration.
+  4. **Automated Regression Prevention:**
+     - In `tests/shop.test.js`: Added test `GET /api/orders rejects unauthenticated requests with 401`.
+- **Verification Evidence:**
+  - Automated test suite (`jest --detectOpenHandles --forceExit`): **5 suites passed, 28 passed, 0 failed** (increased from 27).
 
-### C. Touriva Shop Backend Verification (`touriva/shop/backend`)
-- **Baseline Test Suite:** `npm test` executed **1 test suite passed, 4 tests passed, 0 failed** (`/api/health`, `/api/categories/all`, `/api/wilayas`, `/api/products`).
+---
 
-### D. Production Deployment Safety Gate
-In accordance with zero-risk production safety protocols, changes have been committed to isolated security branches (`fix/security-deps-20261023`) and tested with full test suites. Production redeployment on Render will be triggered once the user confirms and Atlas role scoping is finalized.
+## 8. Staged Production Deployment Plan (Pending User Approval)
+
+All code modifications are safely committed to isolated Git branches with passing test suites. Per production safety requirements, no deployment will be triggered without explicit user confirmation.
+
+| Service | Render Service ID | Target Branch | Head Commit | Changes Included | Verification Method |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Next Challenge** | `srv-dbcguo6i0phs738sose0` | `fix/website-ux-seo-20261023` | `18352d0` | Sitemap cleanup, SPA admin title, accessibility focus rings, audit documentation | `/health`, `test-site.js` (10 suites pass) |
+| **Fleetora API** | `srv-dbb5ol9jfumc73dao5k0` | `fix/security-deps-20261023` | `c91e9fe` | 0 audit vulnerabilities (`tar`, `ws`, `socket.io`), removed credential logging, 7d JWT expiration | `/health`, 12 unit tests pass |
+| **Touriva API** | `srv-dbb3a4lg1s2s73e3ll9g` | `fix/security-deps-20261023` | `a5b1257` | 0 audit vulnerabilities (`nodemailer`, `path-to-regexp`), protected `GET /api/orders`, 7d JWT expiration | `/api/health`, 28 unit tests pass |
 

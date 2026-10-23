@@ -184,3 +184,29 @@ Server: cloudflare
    - Ran `node test-site.js` across 10 complete audit suites (multilingual FR/EN/AR, RTL layout, mobile drawer, contact form validation & submission, responsive viewports from 1920px to 375px, accessibility, security headers).
    - **Result:** **100% PASSING ON ALL CRITERIA**.
 
+---
+
+## 7. Staged Production Deployment Plan (Pending User Approval)
+
+In accordance with strict production safety requirements, no new code deployments will be executed without explicit user authorization. All remediations are committed to dedicated Git branches with 100% passing test suites:
+
+- **Target Service:** Next Challenge Production (`srv-dbcguo6i0phs738sose0`)
+- **Current Live Commit:** `c6e7252` (`main`)
+- **Staged Fix Branch:** `fix/website-ux-seo-20261023`
+- **Staged Head Commit:** `18352d0` (`fix(website): optimize sitemap, SPA admin title, keyboard focus rings, and audit documentation`)
+- **Pre-Deployment Verification:** `test-site.js` passed 10/10 test suites.
+- **Rollback Plan:** Immediate re-deployment of commit `c6e7252` if any post-deploy health check fails.
+
+---
+
+## 8. Cross-Tenant MongoDB Atlas Least-Privilege Action Required
+
+Direct wire protocol verification at `2026-10-23T19:55:05Z` confirms the `next` database user is healthy and operational. However, application users `fleetora_app` and `touriva_app` currently retain `atlasAdmin@admin` in MongoDB Atlas, leaving `nextchallenge` accessible to other services.
+
+To enforce database isolation:
+1. Navigate to: `https://cloud.mongodb.com/v2/62f7d2fa2aef25447facd251#/security/database/users`
+2. Edit `fleetora_app`: Click 🗑️ on `Atlas admin`, assign `readWrite` on `fleetora`, save.
+3. Edit `touriva_app`: Click 🗑️ on `Atlas admin`, assign `readWrite` on `touriva` and `touriva_shop`, save.
+4. **Never modify or delete the `next` user.**
+
+
