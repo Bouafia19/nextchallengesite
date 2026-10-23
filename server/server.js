@@ -31,6 +31,9 @@ connectDB()
 // Disable x-powered-by header
 app.disable('x-powered-by')
 
+// Enable trust proxy for reverse proxy environments (Cloudflare -> Render -> Node.js)
+app.set('trust proxy', 1)
+
 // Security Headers Middleware
 app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff')
@@ -40,9 +43,10 @@ app.use((req, res, next) => {
   res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
 
   // Content Security Policy (Strictly defines authorized script, font, image, and style origins)
+  // script-src enforces 'self' without 'unsafe-inline' (zero inline script execution)
   const cspDirectives = [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline'",
+    "script-src 'self'",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com data:",
     "img-src 'self' data: blob: https://nextchallenge.tech https://*.onrender.com",
@@ -155,11 +159,23 @@ const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000 // 10 minutes
 const MAX_REQUESTS_PER_WINDOW = 10
 
 function getClientIp(req) {
-  const forwarded = req.headers['x-forwarded-for']
-  if (forwarded && typeof forwarded === 'string') {
-    return forwarded.split(',')[0].trim()
+  // 1. Cloudflare edge verified IP (authoritative and non-spoofable when routed via Cloudflare)
+  const cfIp = req.headers['cf-connecting-ip']
+  if (cfIp && typeof cfIp === 'string' && cfIp.trim()) {
+    return cfIp.trim()
   }
+
+  // 2. Express req.ip when trust proxy is active
+  if (req.ip && typeof req.ip === 'string') {
+    return req.ip
+  }
+
+  // 3. Fallback socket remote address
   return req.socket?.remoteAddress || 'unknown'
+}
+
+function isValidObjectId(id) {
+  return typeof id === 'string' && /^[0-9a-fA-F]{24}$/.test(id.trim())
 }
 
 function rateLimiter(req, res, next) {
@@ -235,7 +251,7 @@ app.use('/api/admin', adminRateLimiter)
 // RFC 9116 Security.txt endpoint
 app.get(['/.well-known/security.txt', '/security.txt'], (req, res) => {
   res.type('text/plain').send(
-    'Contact: mailto:security@nextchallenge.tech\n' +
+    'Contact: mailto:nextchallenge2021@gmail.com\n' +
     'Contact: https://nextchallenge.tech/#contact\n' +
     'Expires: 2027-12-31T23:59:59.000Z\n' +
     'Preferred-Languages: fr, en, ar\n' +
@@ -656,6 +672,9 @@ app.get('/api/admin/contacts/stats', requireAdminAuth, async (req, res) => {
 app.patch('/api/admin/contacts/:id/read', requireAdminAuth, async (req, res) => {
   try {
     const { id } = req.params
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({ success: false, message: 'Invalid submission ID format.' })
+    }
     const { readStatus } = req.body || {}
 
     const contact = await Contact.findById(id)
@@ -709,6 +728,9 @@ app.patch('/api/admin/contacts/mark-all-read', requireAdminAuth, async (req, res
 app.delete('/api/admin/contacts/:id', requireAdminAuth, async (req, res) => {
   try {
     const { id } = req.params
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({ success: false, message: 'Invalid submission ID format.' })
+    }
     const deleted = await Contact.findByIdAndDelete(id)
 
     if (!deleted) {
@@ -864,6 +886,9 @@ app.post('/api/admin/courses', requireAdminAuth, async (req, res) => {
 app.put('/api/admin/courses/:id', requireAdminAuth, async (req, res) => {
   try {
     const { id } = req.params
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({ success: false, message: 'Invalid course ID format.' })
+    }
     const { title, description, syllabus, technologies, icon, duration, badge, level, order, isActive } = req.body || {}
 
     const course = await Course.findById(id)
@@ -916,6 +941,9 @@ app.put('/api/admin/courses/:id', requireAdminAuth, async (req, res) => {
 app.delete('/api/admin/courses/:id', requireAdminAuth, async (req, res) => {
   try {
     const { id } = req.params
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({ success: false, message: 'Invalid course ID format.' })
+    }
     const deleted = await Course.findByIdAndDelete(id)
 
     if (!deleted) {
@@ -946,6 +974,9 @@ app.delete('/api/admin/courses/:id', requireAdminAuth, async (req, res) => {
 app.patch('/api/admin/courses/:id/toggle-active', requireAdminAuth, async (req, res) => {
   try {
     const { id } = req.params
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({ success: false, message: 'Invalid course ID format.' })
+    }
     const course = await Course.findById(id)
     if (!course) {
       return res.status(404).json({
@@ -1044,6 +1075,9 @@ app.get('/api/admin/enrollments', requireAdminAuth, async (req, res) => {
 app.patch('/api/admin/enrollments/:id/status', requireAdminAuth, async (req, res) => {
   try {
     const { id } = req.params
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({ success: false, message: 'Invalid enrollment ID format.' })
+    }
     const { status, adminNotes } = req.body || {}
 
     const updateFields = {}
@@ -1092,6 +1126,9 @@ app.patch('/api/admin/enrollments/:id/status', requireAdminAuth, async (req, res
 app.delete('/api/admin/enrollments/:id', requireAdminAuth, async (req, res) => {
   try {
     const { id } = req.params
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({ success: false, message: 'Invalid enrollment ID format.' })
+    }
     const deleted = await Enrollment.findByIdAndDelete(id)
 
     if (!deleted) {
