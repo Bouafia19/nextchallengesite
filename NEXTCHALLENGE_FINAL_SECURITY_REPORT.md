@@ -356,8 +356,13 @@ Once the Atlas users are created:
 5. In Atlas Console -> **Database Access**: Click **Delete** on user `next`.
 6. Confirm user `next` authentication fails permanently with `bad auth : authentication failed`.
 
-### 12.5 Current Status
-- **Fleetora & Touriva Health:** Live & verified UP on existing configuration.
-- **Atlas User Creation:** **AWAITING USER ACTION IN ATLAS CONSOLE**.
-- **User `next` on `cluster0.pt077uc.mongodb.net`:** Still active; **NOT** yet revoked (pending dedicated user deployment).
+### 12.5 Fleetora Authentication Incident Diagnosis & Current Status
+- **Incident Observed:** Fleetora deployment deploy `dep-dbdob0kipgvc73do1tig` failed startup with:
+  `[Fleetora DB] Database connection error: bad auth : Authentication failed.`
+- **Root Cause Identified:** User `fleetora_app` was created in the Atlas project containing cluster `cluster0.hzmvepq.mongodb.net` (verified via `mongosh` auth success on `hzmvepq`), but does not exist in the Atlas project containing legacy cluster `cluster0.pt077uc.mongodb.net`.
+- **Zero URL-Encoding Errors:** Password stored in Render contains alphanumeric characters with zero unencoded special characters.
+- **Service Availability Maintained:** Render's rolling deployment preserved the existing healthy container (`dep-dbb5olhjfumc73dao79g`). Live endpoint `GET https://fleetora-api-93an.onrender.com/health` returns `status: "UP"`, `dbState: "connected"`.
+- **Data Preservation Verified:** All Fleetora collections (`roles` [5], `terms` [3], `vehicles` [5], `companies` [1], `users` [3], `billings` [1], `trips` [1]) remain intact and verified.
+- **Action Required:** In Atlas Console, switch projects using the top-left dropdown to the project hosting cluster `cluster0.pt077uc.mongodb.net`, create user `fleetora_app` (and `touriva_app`) there with `readWrite` on `fleetora` (and `touriva`), update Render `MONGO_URI`, and redeploy.
+- **User `next` on `cluster0.pt077uc.mongodb.net`:** Kept active as fallback until migration to `fleetora_app` is live and verified.
 - **Next Challenge Production:** 100% isolated, unaffected, and healthy on `cluster0.hzmvepq.mongodb.net`.
