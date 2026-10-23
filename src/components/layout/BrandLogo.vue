@@ -65,6 +65,14 @@ const handleClick = (e) => {
   direction: ltr !important;
   unicode-bidi: isolate !important;
   transition: opacity 0.2s ease, transform 0.2s ease;
+  flex-shrink: 0 !important;
+  min-width: max-content;
+}
+
+.brand-logo:focus-visible {
+  outline: 2px solid #5b54e8;
+  outline-offset: 4px;
+  border-radius: 8px;
 }
 
 .brand-logo:hover {
@@ -80,6 +88,7 @@ const handleClick = (e) => {
   border-radius: 8px;
   /* 1:1 Aspect ratio for circular emblem */
   aspect-ratio: 1 / 1;
+  flex-shrink: 0;
 }
 
 .brand-logo__wordmark {
@@ -90,6 +99,7 @@ const handleClick = (e) => {
   display: inline-flex;
   align-items: center;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .brand-logo__word-next {
@@ -109,7 +119,16 @@ const handleClick = (e) => {
   color: #0284c7;
 }
 
-@media (max-width: 420px) {
+@media (max-width: 1199px) {
+  .brand-logo {
+    gap: 8px;
+  }
+  .brand-logo__wordmark {
+    font-size: 1.125rem;
+  }
+}
+
+@media (max-width: 480px) {
   .brand-logo {
     gap: 8px;
   }

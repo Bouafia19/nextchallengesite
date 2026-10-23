@@ -12,7 +12,7 @@ const isScrolled = ref(false)
 const drawer = ref(false)
 
 const isRtl = computed(() => locale.value === 'ar')
-const drawerLocation = computed(() => isRtl.value ? 'left' : 'right')
+const drawerLocation = computed(() => (isRtl.value ? 'left' : 'right'))
 
 const toggleTheme = () => {
   theme.global.name.value =
@@ -55,18 +55,20 @@ const navigateTo = (href) => {
     class="app-navbar"
     :class="{ 'app-navbar--scrolled': isScrolled }"
   >
-    <v-container class="d-flex align-center justify-space-between py-3 px-4 px-md-6">
-      <!-- Brand Logo -->
-      <BrandLogo :size="42" />
+    <div class="app-navbar__container">
+      <!-- 1. Brand Logo / Site Title Area -->
+      <div class="app-navbar__brand">
+        <BrandLogo :size="40" />
+      </div>
 
-      <!-- Desktop Navigation Links -->
-      <nav class="d-none d-md-flex align-center ga-1" aria-label="Main Navigation">
+      <!-- 2. Desktop Navigation Links (Occupies strictly separate middle area, hidden on mobile) -->
+      <nav class="app-navbar__nav align-center" aria-label="Main Navigation">
         <v-btn
           v-for="item in siteConfig.navLinks"
           :key="item.key"
           :href="item.href"
           variant="text"
-          class="nav-link font-weight-medium px-3"
+          class="nav-link font-weight-medium"
           size="default"
           @click.prevent="navigateTo(item.href)"
         >
@@ -74,8 +76,8 @@ const navigateTo = (href) => {
         </v-btn>
       </nav>
 
-      <!-- Desktop Action Buttons -->
-      <div class="d-none d-md-flex align-center ga-3">
+      <!-- 3. Desktop Action Controls (Language + Theme + Admin + CTA, hidden on mobile) -->
+      <div class="app-navbar__actions align-center">
         <!-- Language Selector -->
         <LanguageSelector variant="menu" />
 
@@ -95,9 +97,9 @@ const navigateTo = (href) => {
 
         <!-- Admin Portal Direct Access -->
         <v-tooltip text="Admin Portal" location="bottom">
-          <template #activator="{ props }">
+          <template #activator="{ props: tooltipProps }">
             <v-btn
-              v-bind="props"
+              v-bind="tooltipProps"
               icon
               variant="text"
               density="comfortable"
@@ -115,7 +117,7 @@ const navigateTo = (href) => {
           href="#contact"
           color="primary"
           variant="flat"
-          class="btn-shimmer px-5 font-weight-bold"
+          class="btn-shimmer nav-cta-btn font-weight-bold"
           size="default"
           prepend-icon="mdi-chat-processing-outline"
           @click.prevent="navigateTo('#contact')"
@@ -124,8 +126,8 @@ const navigateTo = (href) => {
         </v-btn>
       </div>
 
-      <!-- Mobile Controls (Language + Theme Toggle + Drawer Hamburger) -->
-      <div class="d-flex d-md-none align-center ga-1">
+      <!-- 4. Mobile Controls (Language + Theme Toggle + Accessible Drawer Hamburger, hidden on desktop) -->
+      <div class="app-navbar__mobile align-center ga-1">
         <LanguageSelector variant="menu" />
 
         <v-btn
@@ -145,17 +147,21 @@ const navigateTo = (href) => {
           icon
           variant="text"
           density="comfortable"
-          :aria-label="t('nav.openMenu')"
+          :aria-label="drawer ? t('nav.closeMenu') : t('nav.openMenu')"
+          :aria-expanded="drawer ? 'true' : 'false'"
+          aria-controls="mobile-nav-drawer"
+          class="mobile-menu-toggle"
           @click="drawer = !drawer"
         >
-          <v-icon icon="mdi-menu" size="26" />
+          <v-icon :icon="drawer ? 'mdi-close' : 'mdi-menu'" size="26" />
         </v-btn>
       </div>
-    </v-container>
+    </div>
   </header>
 
   <!-- Mobile Responsive Navigation Drawer -->
   <v-navigation-drawer
+    id="mobile-nav-drawer"
     v-model="drawer"
     :location="drawerLocation"
     temporary
@@ -284,10 +290,11 @@ const navigateTo = (href) => {
   -webkit-backdrop-filter: blur(16px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  width: 100%;
 }
 
 .v-theme--nextChallengeLight .app-navbar {
-  background: rgba(255, 255, 255, 0.82);
+  background: rgba(255, 255, 255, 0.85);
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
 }
 
@@ -302,25 +309,187 @@ const navigateTo = (href) => {
   box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.08);
 }
 
+/* Header Container: Full-width responsive flex container with generous max-width */
+.app-navbar__container {
+  width: 100%;
+  max-width: 1536px;
+  margin: 0 auto;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  box-sizing: border-box;
+}
+
+@media (min-width: 960px) {
+  .app-navbar__container {
+    padding: 12px 20px;
+    gap: 16px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .app-navbar__container {
+    padding: 12px 28px;
+    gap: 20px;
+  }
+}
+
+@media (min-width: 1440px) {
+  .app-navbar__container {
+    padding: 12px 36px;
+    gap: 28px;
+  }
+}
+
+/* 1. Brand Logo: Locked flex-shrink: 0, guaranteed site title visibility */
+.app-navbar__brand {
+  flex-shrink: 0 !important;
+  display: flex;
+  align-items: center;
+  z-index: 2;
+}
+
+/* 2. Navigation: Hidden on mobile (< 960px), strictly confined on desktop */
+.app-navbar__nav {
+  display: none !important;
+}
+
+@media (min-width: 960px) {
+  .app-navbar__nav {
+    display: flex !important;
+    flex: 1 1 auto;
+    min-width: 0;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    overflow: hidden;
+  }
+}
+
+/* 3. Action Controls: Hidden on mobile (< 960px), desktop actions on >= 960px */
+.app-navbar__actions {
+  display: none !important;
+}
+
+@media (min-width: 960px) {
+  .app-navbar__actions {
+    display: flex !important;
+    flex-shrink: 0 !important;
+    align-items: center;
+    gap: 8px;
+    z-index: 2;
+  }
+}
+
+@media (min-width: 1280px) {
+  .app-navbar__actions {
+    gap: 12px;
+  }
+}
+
+/* 4. Mobile Controls: Displayed on mobile (< 960px), hidden on desktop (>= 960px) */
+.app-navbar__mobile {
+  display: flex !important;
+  align-items: center;
+  flex-shrink: 0 !important;
+}
+
+@media (min-width: 960px) {
+  .app-navbar__mobile {
+    display: none !important;
+  }
+}
+
+/* Nav Link Base Styles */
 .nav-link {
-  color: rgba(255, 255, 255, 0.75) !important;
-  font-size: 0.925rem;
-  transition: all 0.2s ease;
+  color: rgba(255, 255, 255, 0.8) !important;
+  font-size: 0.8125rem !important; /* 13px base */
+  padding: 0 6px !important;
+  height: 34px !important;
+  min-width: auto !important;
   border-radius: 8px;
+  white-space: nowrap;
+  letter-spacing: -0.01em;
+  transition: all 0.2s ease;
 }
 
 .v-theme--nextChallengeLight .nav-link {
-  color: rgba(15, 23, 42, 0.75) !important;
+  color: rgba(15, 23, 42, 0.8) !important;
 }
 
 .nav-link:hover {
   color: #ffffff !important;
-  background: rgba(255, 255, 255, 0.06) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
 }
 
 .v-theme--nextChallengeLight .nav-link:hover {
   color: #4f46e5 !important;
-  background: rgba(79, 70, 229, 0.06) !important;
+  background: rgba(79, 70, 229, 0.08) !important;
+}
+
+.nav-link:focus-visible,
+.mobile-menu-toggle:focus-visible,
+.nav-cta-btn:focus-visible {
+  outline: 2px solid #5b54e8 !important;
+  outline-offset: 2px !important;
+}
+
+/* Tablet adjustments (960px - 1279px) */
+@media (min-width: 960px) and (max-width: 1279px) {
+  .app-navbar__nav {
+    gap: 1px;
+  }
+  .nav-link {
+    font-size: 0.8rem !important;
+    padding: 0 5px !important;
+    height: 32px !important;
+  }
+  /* On compact tablet, hide the redundant CTA button so all 8 links fit with generous margin */
+  .nav-cta-btn {
+    display: none !important;
+  }
+}
+
+/* Desktop sizing (1280px - 1439px) */
+@media (min-width: 1280px) {
+  .app-navbar__nav {
+    gap: 3px;
+  }
+  .nav-link {
+    font-size: 0.875rem !important;
+    padding: 0 9px !important;
+    height: 36px !important;
+  }
+}
+
+/* Large desktop (>= 1440px) */
+@media (min-width: 1440px) {
+  .app-navbar__nav {
+    gap: 6px;
+  }
+  .nav-link {
+    font-size: 0.925rem !important;
+    padding: 0 12px !important;
+    height: 38px !important;
+  }
+}
+
+/* Nav CTA button */
+.nav-cta-btn {
+  padding: 0 18px !important;
+  font-size: 0.875rem !important;
+  height: 38px !important;
+  white-space: nowrap;
+}
+
+@media (min-width: 1440px) {
+  .nav-cta-btn {
+    padding: 0 22px !important;
+    font-size: 0.925rem !important;
+    height: 40px !important;
+  }
 }
 
 .mobile-drawer {
