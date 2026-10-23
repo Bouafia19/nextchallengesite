@@ -39,6 +39,21 @@ app.use((req, res, next) => {
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin')
   res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
 
+  // Content Security Policy (Strictly defines authorized script, font, image, and style origins)
+  const cspDirectives = [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline'",
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    "font-src 'self' https://fonts.gstatic.com data:",
+    "img-src 'self' data: blob: https://nextchallenge.tech https://*.onrender.com",
+    "connect-src 'self' https://nextchallenge.tech https://nextchallenge-tech.onrender.com",
+    "frame-ancestors 'self'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "object-src 'none'"
+  ]
+  res.setHeader('Content-Security-Policy', cspDirectives.join('; '))
+
   // HSTS when on HTTPS
   if (req.secure || req.headers['x-forwarded-proto'] === 'https') {
     res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload')
@@ -46,10 +61,40 @@ app.use((req, res, next) => {
   next()
 })
 
-// CORS Configuration - Permissive for dev and secured for production
+// Sensitive File and Directory Guard Middleware (defense-in-depth against reconnaissance)
+app.use((req, res, next) => {
+  let decodedPath = ''
+  try {
+    decodedPath = decodeURIComponent(req.path).toLowerCase()
+  } catch {
+    return res.status(400).json({ success: false, message: 'Bad request URI' })
+  }
+
+  // Reject directory traversal attempts
+  if (decodedPath.includes('..') || decodedPath.includes('//')) {
+    return res.status(400).json({ success: false, message: 'Invalid path traversal detected' })
+  }
+
+  // Block dotfiles and hidden system directories (e.g. /.env, /.git, /.aws)
+  // Permitted exception: /.well-known/ for RFC 9116 security.txt and standard verification
+  if (/^\/\.(?!well-known\/)/.test(decodedPath)) {
+    return res.status(404).json({ success: false, message: 'Resource not found' })
+  }
+
+  // Block sensitive file extensions (backups, source configs, secrets, databases, logs)
+  const sensitiveExtRegex = /\.(env|git|bak|backup|old|save|sql|sqlite|db|log|conf|ini|yaml|yml|sh|bash|tar|gz|zip)$/i
+  if (sensitiveExtRegex.test(decodedPath)) {
+    return res.status(404).json({ success: false, message: 'Resource not found' })
+  }
+
+  next()
+})
+
+// CORS Configuration - Strictly restricted to Next Challenge domains and explicit endpoints
 const allowedOrigins = [
   'https://nextchallenge.tech',
   'https://www.nextchallenge.tech',
+  'https://nextchallenge-tech.onrender.com',
   process.env.FRONTEND_URL
 ].filter(Boolean)
 
@@ -63,24 +108,22 @@ const corsOptions = {
       return callback(null, true)
     }
 
+    // Match exact allowed origins or subdomains of nextchallenge.tech
     if (
       allowedOrigins.includes(origin) ||
-      origin.endsWith('.onrender.com') ||
-      origin.endsWith('.nextchallenge.tech') ||
-      origin.endsWith('.vercel.app') ||
-      origin.endsWith('.netlify.app')
+      /^https:\/\/([a-zA-Z0-9-]+\.)?nextchallenge\.tech$/.test(origin)
     ) {
       return callback(null, true)
     }
 
-    // In non-production environments, allow origin
+    // In non-production environments, allow origin for developer tooling
     if (process.env.NODE_ENV !== 'production') {
       return callback(null, true)
     }
 
     return callback(null, false)
   },
-  methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: [
     'Content-Type',
     'Accept',
@@ -106,7 +149,7 @@ app.options('*', cors(corsOptions)) // Explicit preflight handling for all route
 // Body Parser with strict payload limit
 app.use(express.json({ limit: '64kb' }))
 
-// In-Memory Rate Limiter (10 requests per 10 minutes per IP for contact submissions)
+// In-Memory Rate Limiter (10 requests per 10 minutes per IP for contact and enrollment submissions)
 const rateLimitMap = new Map()
 const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000 // 10 minutes
 const MAX_REQUESTS_PER_WINDOW = 10
@@ -150,19 +193,77 @@ function rateLimiter(req, res, next) {
   next()
 }
 
-// Health Check
-app.get('/health', (req, res) => {
-  const dbStatus = isDbConnected() ? 'connected' : 'disconnected'
-  const err = getLastMongoError()
+// In-Memory Admin Rate Limiter (25 requests per 5 minutes per IP for admin routes to mitigate brute force)
+const adminRateLimitMap = new Map()
+const ADMIN_RATE_LIMIT_WINDOW_MS = 5 * 60 * 1000 // 5 minutes
+const MAX_ADMIN_REQUESTS_PER_WINDOW = 25
 
-  res.status(200).json({
-    status: dbStatus === 'connected' ? 'ok' : 'degraded',
+function adminRateLimiter(req, res, next) {
+  const ip = getClientIp(req)
+  const now = Date.now()
+
+  let record = adminRateLimitMap.get(ip)
+  if (!record || now - record.startTime > ADMIN_RATE_LIMIT_WINDOW_MS) {
+    record = { startTime: now, count: 1 }
+    adminRateLimitMap.set(ip, record)
+  } else {
+    record.count += 1
+  }
+
+  // Periodic cleanup if map grows
+  if (adminRateLimitMap.size > 1000) {
+    for (const [key, value] of adminRateLimitMap.entries()) {
+      if (now - value.startTime > ADMIN_RATE_LIMIT_WINDOW_MS) {
+        adminRateLimitMap.delete(key)
+      }
+    }
+  }
+
+  if (record.count > MAX_ADMIN_REQUESTS_PER_WINDOW) {
+    return res.status(429).json({
+      success: false,
+      message: 'Too many administrative requests received. Access temporarily restricted. Please try again in a few minutes.'
+    })
+  }
+
+  next()
+}
+
+// Apply admin rate limiting to all /api/admin routes
+app.use('/api/admin', adminRateLimiter)
+
+// RFC 9116 Security.txt endpoint
+app.get(['/.well-known/security.txt', '/security.txt'], (req, res) => {
+  res.type('text/plain').send(
+    'Contact: mailto:security@nextchallenge.tech\n' +
+    'Contact: https://nextchallenge.tech/#contact\n' +
+    'Expires: 2027-12-31T23:59:59.000Z\n' +
+    'Preferred-Languages: fr, en, ar\n' +
+    'Canonical: https://nextchallenge.tech/.well-known/security.txt\n' +
+    'Policy: https://nextchallenge.tech/security\n'
+  )
+})
+
+// Health Check - Sanitized for production
+app.get('/health', (req, res) => {
+  const isConnected = isDbConnected()
+  const dbStatus = isConnected ? 'connected' : 'disconnected'
+
+  const responseBody = {
+    status: isConnected ? 'ok' : 'degraded',
     service: 'nextchallengesite-unified',
     domain: 'nextchallenge.tech',
     database: dbStatus,
-    ...(err && dbStatus === 'disconnected' ? { error: err } : {}),
     timestamp: new Date().toISOString()
-  })
+  }
+
+  // Disclose detailed internal error only in non-production environments
+  if (!isConnected && process.env.NODE_ENV !== 'production') {
+    const err = getLastMongoError()
+    if (err) responseBody.error = err
+  }
+
+  res.status(200).json(responseBody)
 })
 
 /**
@@ -355,12 +456,14 @@ app.get('/api/courses', async (req, res) => {
     const { tech, search } = req.query
     const filter = { isActive: true }
 
-    if (tech && typeof tech === 'string') {
-      filter.technologies = { $in: [new RegExp(tech.trim(), 'i')] }
+    if (tech && typeof tech === 'string' && tech.trim()) {
+      const escapedTech = tech.trim().slice(0, 50).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      filter.technologies = { $in: [new RegExp(escapedTech, 'i')] }
     }
 
     if (search && typeof search === 'string' && search.trim()) {
-      const searchRegex = new RegExp(search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i')
+      const escapedSearch = search.trim().slice(0, 50).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      const searchRegex = new RegExp(escapedSearch, 'i')
       filter.$or = [
         { title: searchRegex },
         { description: searchRegex },
@@ -453,7 +556,7 @@ app.get('/api/admin/contacts', requireAdminAuth, async (req, res) => {
     }
 
     if (search && typeof search === 'string' && search.trim()) {
-      const escapedSearch = search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      const escapedSearch = search.trim().slice(0, 100).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
       const regex = new RegExp(escapedSearch, 'i')
       filter.$or = [
         { name: regex },
@@ -465,13 +568,24 @@ app.get('/api/admin/contacts', requireAdminAuth, async (req, res) => {
       ]
     }
 
+    // Whitelist allowed sort parameters to prevent unexpected query behavior
+    const ALLOWED_CONTACT_SORTS = new Set([
+      '-date', 'date',
+      '-createdAt', 'createdAt',
+      'name', '-name',
+      'email', '-email',
+      'readStatus', '-readStatus',
+      '_id', '-_id'
+    ])
+    const cleanSort = typeof sort === 'string' && ALLOWED_CONTACT_SORTS.has(sort.trim()) ? sort.trim() : '-date'
+
     const pageNum = Math.max(1, parseInt(page, 10) || 1)
     const limitNum = Math.min(500, Math.max(1, parseInt(limit, 10) || 100))
     const skip = (pageNum - 1) * limitNum
 
     const [contacts, totalCount, unreadCount] = await Promise.all([
       Contact.find(filter)
-        .sort(sort)
+        .sort(cleanSort)
         .skip(skip)
         .limit(limitNum)
         .lean(),
@@ -649,7 +763,8 @@ app.get('/api/admin/courses', requireAdminAuth, async (req, res) => {
     }
 
     if (search && typeof search === 'string' && search.trim()) {
-      const searchRegex = new RegExp(search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i')
+      const escapedSearch = search.trim().slice(0, 100).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      const searchRegex = new RegExp(escapedSearch, 'i')
       filter.$or = [
         { title: searchRegex },
         { description: searchRegex },
@@ -885,7 +1000,8 @@ app.get('/api/admin/enrollments', requireAdminAuth, async (req, res) => {
     }
 
     if (search && typeof search === 'string' && search.trim()) {
-      const searchRegex = new RegExp(search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i')
+      const escapedSearch = search.trim().slice(0, 100).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      const searchRegex = new RegExp(escapedSearch, 'i')
       filter.$or = [
         { name: searchRegex },
         { email: searchRegex },
@@ -1004,12 +1120,16 @@ app.delete('/api/admin/enrollments/:id', requireAdminAuth, async (req, res) => {
 // Serve production static assets from dist
 const distPath = path.join(rootDir, 'dist')
 
-// Cache control: Hashed assets cached for 1 year, index.html not cached
+// Cache control and MIME types: Hashed assets cached for 1 year, APK downloads forced as attachment, index.html not cached
 app.use(
   express.static(distPath, {
     setHeaders: (res, filePath) => {
       if (filePath.includes('/assets/')) {
         res.setHeader('Cache-Control', 'public, max-age=31536000, immutable')
+      } else if (filePath.endsWith('.apk')) {
+        res.setHeader('Content-Type', 'application/vnd.android.package-archive')
+        res.setHeader('Content-Disposition', 'attachment')
+        res.setHeader('Cache-Control', 'public, max-age=86400')
       } else if (filePath.endsWith('.html')) {
         res.setHeader('Cache-Control', 'no-cache')
       }

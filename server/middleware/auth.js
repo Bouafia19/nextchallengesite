@@ -72,8 +72,9 @@ export function requireAdminAuth(req, res, next) {
     }
   }
 
-  // Check URL query parameters
-  if (!rawProvidedKey && req.query) {
+  // In non-production environments only, allow query parameters for testing/debugging.
+  // In production, query parameter authentication is prohibited to prevent credential leakage in URLs, access logs, and referer headers.
+  if (!rawProvidedKey && !isProduction && req.query) {
     rawProvidedKey = req.query.apiKey || req.query.key || req.query.adminKey
   }
 
