@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import AppNavbar from './components/layout/AppNavbar.vue'
 import HeroSection from './components/sections/HeroSection.vue'
@@ -14,13 +14,23 @@ import AppFooter from './components/layout/AppFooter.vue'
 import AdminPanel from './components/admin/AdminPanel.vue'
 import ProductDetailView from './components/products/ProductDetailView.vue'
 import { siteConfig } from './config/site.js'
+import { messages } from './plugins/i18n.js'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const showBackToTop = ref(false)
 const currentView = ref('site') // 'site' | 'admin' | 'product-detail'
 const selectedProductSlug = ref('')
 
-const defaultTitle = 'Next Challenge | Software Development & Digital Solutions'
+const defaultTitle = computed(() => {
+  return messages[locale.value]?.meta?.title || 'Next Challenge | Développement Logiciel & Solutions Numériques'
+})
+
+// Sync title when locale changes
+watch(locale, () => {
+  if (currentView.value === 'site') {
+    document.title = defaultTitle.value
+  }
+})
 
 const checkRoute = () => {
   const hash = window.location.hash.toLowerCase()
@@ -29,6 +39,7 @@ const checkRoute = () => {
   if (path === '/admin' || hash === '#admin' || hash === '#/admin') {
     currentView.value = 'admin'
     selectedProductSlug.value = ''
+    document.title = 'Administration | Next Challenge'
     return
   }
 
@@ -53,12 +64,13 @@ const checkRoute = () => {
 
   currentView.value = 'site'
   selectedProductSlug.value = ''
-  document.title = defaultTitle
+  document.title = defaultTitle.value
 }
 
 const showAdmin = () => {
   currentView.value = 'admin'
   selectedProductSlug.value = ''
+  document.title = 'Administration | Next Challenge'
   window.location.hash = '#admin'
 }
 
@@ -70,7 +82,7 @@ const showSite = () => {
   } else {
     window.location.hash = ''
   }
-  document.title = defaultTitle
+  document.title = defaultTitle.value
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
@@ -95,7 +107,7 @@ const showProductsSection = () => {
   currentView.value = 'site'
   selectedProductSlug.value = ''
   window.history.pushState(null, '', '/#products')
-  document.title = defaultTitle
+  document.title = defaultTitle.value
   setTimeout(() => {
     const el = document.getElementById('products')
     if (el) {

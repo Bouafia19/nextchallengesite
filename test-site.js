@@ -25,7 +25,7 @@ function startServer() {
     console.log(`🚀 Starting local Express production server on port ${TEST_PORT}...`)
     serverProcess = spawn('node', ['server/server.js'], {
       cwd: __dirname,
-      env: { ...process.env, PORT: String(TEST_PORT), NODE_ENV: 'production' },
+      env: { ...process.env, PORT: String(TEST_PORT), NODE_ENV: 'test', MONGODB_URI: 'mongodb://127.0.0.1:27017/nextchallenge' },
       stdio: ['ignore', 'pipe', 'pipe']
     })
 

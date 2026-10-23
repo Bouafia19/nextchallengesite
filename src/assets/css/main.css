@@ -306,3 +306,17 @@ body.is-rtl {
   transform: translateX(-2px);
 }
 
+/* ==========================================================================
+   Keyboard Accessibility & Focus Visibility (WCAG 2.1 AA)
+   ========================================================================== */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+.v-btn:focus-visible {
+  outline: 2px solid var(--nc-primary) !important;
+  outline-offset: 3px !important;
+  box-shadow: 0 0 0 4px var(--nc-glow-primary) !important;
+}
+
