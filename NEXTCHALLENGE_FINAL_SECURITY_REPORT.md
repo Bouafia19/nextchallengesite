@@ -294,3 +294,70 @@ In accordance with incident remediation requirements, the cluster ecosystem was 
   - Touriva Web (`https://touriva-web.onrender.com`): **HTTP 200 OK**
   - Inventory V2 (`https://inventory-v2-web-demo.onrender.com`): **HTTP 200 OK**
   - No sibling databases, code, or configurations were modified.
+
+---
+
+## 12. Legacy Cluster User Migration Plan: Fleetora & Touriva
+
+### 12.1 Current Configuration & Database Dependencies
+The legacy cluster `cluster0.pt077uc.mongodb.net` was thoroughly audited. It hosts active production data for two applications that currently share database user `next`:
+
+1. **Fleetora API Service (`srv-dbb5ol9jfumc73dao5k0`):**
+   - **Service URL:** `https://fleetora-api-93an.onrender.com`
+   - **Environment:** `MONGO_URI` -> `mongodb+srv://next:*****@cluster0.pt077uc.mongodb.net/fleetora`
+   - **Live Health Status:** `HTTP 200 OK` — `{"service":"Fleetora API","status":"UP","dbState":"connected"}`
+   - **Database Target:** `fleetora` (Verified collections: `roles` [5], `terms` [3], `vehicles` [5], `companies` [1], `users` [3], `billings` [1], `trips` [1])
+
+2. **Touriva API Service (`srv-dbb3a4lg1s2s73e3ll9g`):**
+   - **Service URL:** `https://touriva-api.onrender.com`
+   - **Environment:** `MONGO_URI` -> `mongodb+srv://next:*****@cluster0.pt077uc.mongodb.net/touriva`
+   - **Live Health Status:** `HTTP 200 OK` — `{"status":"ok","service":"Touriva Tourism API","database":"connected"}`
+   - **Database Target:** `touriva` (Verified collections: `communes` [1542], `dairas` [549], `wilayas` [57], `roles` [46], `products` [31], `activities` [24], `sites` [18], `hotels` [18], `restaurants` [18], `users` [14], `tripsubscriptions` [12], `orders` [11], `trips` [9], `partners` [6], `brands` [5], `publications` [4], `terms` [3], `plans` [3], `billings` [3], `announcements` [2])
+
+### 12.2 Atlas Control Plane Authorization Findings
+Direct execution of database user creation/modification commands via client shell (`mongosh`) was tested and confirmed prohibited:
+```text
+MongoServerError: (Unauthorized) not authorized on admin to execute command { createUser: "test_probe_user", ... }
+```
+MongoDB Atlas strictly restricts database user administration to the Atlas Control Plane (cloud.mongodb.com Web UI or Atlas Admin API keys). Database user migration must be performed via the Atlas Web Console.
+
+### 12.3 Action Required: Create Dedicated Atlas Users
+To retire the shared user `next` without downtime or privilege creep, separate least-privilege users must be created in MongoDB Atlas:
+
+1. Log in to [cloud.mongodb.com](https://cloud.mongodb.com).
+2. Select the project containing cluster `cluster0.pt077uc.mongodb.net`.
+3. In the left navigation menu under **Security**, click **Database Access**.
+4. Click **Add New Database User**:
+   - **User 1 (Fleetora):**
+     - **Username:** `fleetora_app`
+     - **Authentication Method:** Password -> Click **Autogenerate Secure Password** (save securely).
+     - **Database User Privileges:** Select **Built-in Role** -> **Only read and write to specific databases**.
+     - **Database:** `fleetora`
+     - **Role:** `readWrite`
+     - Click **Add User**.
+   - **User 2 (Touriva):**
+     - **Username:** `touriva_app`
+     - **Authentication Method:** Password -> Click **Autogenerate Secure Password** (save securely).
+     - **Database User Privileges:** Select **Built-in Role** -> **Only read and write to specific databases**.
+     - **Database:** `touriva`
+     - **Role:** `readWrite`
+     - Click **Add User**.
+
+### 12.4 Migration Execution Workflow
+Once the Atlas users are created:
+1. Construct the new connection URIs:
+   - Fleetora: `mongodb+srv://fleetora_app:<PASSWORD>@cluster0.pt077uc.mongodb.net/fleetora?retryWrites=true&w=majority`
+   - Touriva: `mongodb+srv://touriva_app:<PASSWORD>@cluster0.pt077uc.mongodb.net/touriva?retryWrites=true&w=majority`
+2. Update the `MONGO_URI` environment variable on Render:
+   - For `fleetora-api` (`srv-dbb5ol9jfumc73dao5k0`)
+   - For `touriva-api` (`srv-dbb3a4lg1s2s73e3ll9g`)
+3. Verify live reconnect via `/health` (Fleetora) and `/api/health` (Touriva).
+4. Run non-destructive read validation across the respective collections.
+5. In Atlas Console -> **Database Access**: Click **Delete** on user `next`.
+6. Confirm user `next` authentication fails permanently with `bad auth : authentication failed`.
+
+### 12.5 Current Status
+- **Fleetora & Touriva Health:** Live & verified UP on existing configuration.
+- **Atlas User Creation:** **AWAITING USER ACTION IN ATLAS CONSOLE**.
+- **User `next` on `cluster0.pt077uc.mongodb.net`:** Still active; **NOT** yet revoked (pending dedicated user deployment).
+- **Next Challenge Production:** 100% isolated, unaffected, and healthy on `cluster0.hzmvepq.mongodb.net`.
