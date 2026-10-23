@@ -99,13 +99,15 @@
     "liveDeployment": "Live Deployment",
     "verifiedBuild": "Verified Build",
     "renderProduction": "Render Production",
+    "cardExploreHint": "Click to view full product details & live applications",
+    "viewDetails": "Explore Details",
     "items": {
       "fleetora": {
         "badge": "Mobility & Logistics",
         "category": "Transportation Management Platform",
         "tagline": "Unified Transportation & Carrier Fleet Platform",
         "description": "A modern fleet and transportation management solution designed to connect customers, drivers, vehicles, and transportation operations through a unified digital platform.",
-        "buttonText": "View Fleetora",
+        "buttonText": "Explore Details",
         "highlights": [
           "End-to-end trip & dispatch management",
           "Customer shipper booking portal",
@@ -118,7 +120,7 @@
         "category": "Inventory & ERP System",
         "tagline": "Modern Stock & Multi-Warehouse Operations",
         "description": "A modern inventory management solution designed to simplify product, stock, and business inventory operations.",
-        "buttonText": "View Demo",
+        "buttonText": "Explore Details",
         "highlights": [
           "Multi-depot stock ledger & transfer tracking",
           "Commercial A4 Invoices & POS thermal receipts",
@@ -131,7 +133,7 @@
         "category": "Travel & Tourism Platform",
         "tagline": "Comprehensive Tourism Experience Platform",
         "description": "A modern tourism and travel platform designed to provide digital solutions for tourism and travel-related services.",
-        "buttonText": "Explore Touriva",
+        "buttonText": "Explore Details",
         "highlights": [
           "Attraction discovery & interactive maps",
           "Guided excursion itineraries & booking",
@@ -140,6 +142,29 @@
         ]
       }
     }
+  },
+  "productDetail": {
+    "backToProducts": "Back to Products",
+    "breadcrumbHome": "Home",
+    "breadcrumbProducts": "Products",
+    "liveDeployment": "Live Deployment",
+    "verifiedProduction": "Verified Production",
+    "openLiveDemo": "Open Live Demo",
+    "openLiveApp": "Launch Application",
+    "openAdminPanel": "Access Admin Console",
+    "downloadApk": "Download Android APK",
+    "apkAvailable": "Verified Android APK Downloads",
+    "apkDescription": "Native Android APK packages built for mobile devices with geolocation, camera, and offline capabilities.",
+    "platformsTitle": "Supported Platforms & Architectures",
+    "applicationsTitle": "Application Ecosystem & Live Portals",
+    "applicationsSubtitle": "Distinct live applications engineered for each stakeholder role in the platform.",
+    "featuresTitle": "Key Capabilities & Engineering Features",
+    "useCasesTitle": "Target Audience & Business Use Cases",
+    "launchApp": "Open Portal",
+    "directDownload": "Direct Download",
+    "contactCtaTitle": "Looking to deploy or customize this solution for your enterprise?",
+    "contactCtaSubtitle": "Next Challenge specializes in tailoring enterprise software, multi-tenant architectures, and cloud deployments.",
+    "contactCtaBtn": "Discuss Custom Deployment"
   },
   "courses": {
     "badge": "Curriculum & Academics",

@@ -12,34 +12,121 @@ import AboutSection from './components/sections/AboutSection.vue'
 import ContactSection from './components/sections/ContactSection.vue'
 import AppFooter from './components/layout/AppFooter.vue'
 import AdminPanel from './components/admin/AdminPanel.vue'
+import ProductDetailView from './components/products/ProductDetailView.vue'
+import { siteConfig } from './config/site.js'
 
 const { t } = useI18n()
 const showBackToTop = ref(false)
-const currentView = ref('site') // 'site' | 'admin'
+const currentView = ref('site') // 'site' | 'admin' | 'product-detail'
+const selectedProductSlug = ref('')
+
+const defaultTitle = 'Next Challenge | Software Development & Digital Solutions'
 
 const checkRoute = () => {
   const hash = window.location.hash.toLowerCase()
   const path = window.location.pathname.toLowerCase()
+
   if (path === '/admin' || hash === '#admin' || hash === '#/admin') {
     currentView.value = 'admin'
-  } else {
-    currentView.value = 'site'
+    selectedProductSlug.value = ''
+    return
   }
+
+  // Match /products/:slug or #/products/:slug or #products/:slug
+  const productMatch =
+    path.match(/^\/products\/([a-z0-9_-]+)/) ||
+    hash.match(/^#\/?products\/([a-z0-9_-]+)/)
+
+  if (productMatch) {
+    let slug = productMatch[1]
+    if (slug === 'inventory-demo') slug = 'inventory-v2'
+    const matchedProduct = siteConfig.products.find(
+      (p) => p.slug === slug || p.id === slug
+    )
+    if (matchedProduct) {
+      currentView.value = 'product-detail'
+      selectedProductSlug.value = matchedProduct.slug
+      document.title = `${matchedProduct.name} — ${matchedProduct.category} | Next Challenge`
+      return
+    }
+  }
+
+  currentView.value = 'site'
+  selectedProductSlug.value = ''
+  document.title = defaultTitle
 }
 
 const showAdmin = () => {
   currentView.value = 'admin'
+  selectedProductSlug.value = ''
   window.location.hash = '#admin'
 }
 
 const showSite = () => {
   currentView.value = 'site'
+  selectedProductSlug.value = ''
   if (window.location.pathname === '/admin') {
     window.history.pushState(null, '', '/')
   } else {
     window.location.hash = ''
   }
+  document.title = defaultTitle
   window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
+const openProductDetail = (slug) => {
+  const normalized = slug === 'inventory-demo' ? 'inventory-v2' : slug
+  const matched = siteConfig.products.find(
+    (p) => p.slug === normalized || p.id === normalized
+  )
+  const finalSlug = matched ? matched.slug : normalized
+
+  selectedProductSlug.value = finalSlug
+  currentView.value = 'product-detail'
+  window.history.pushState(null, '', `/products/${finalSlug}`)
+  window.scrollTo({ top: 0, behavior: 'instant' })
+
+  if (matched) {
+    document.title = `${matched.name} — ${matched.category} | Next Challenge`
+  }
+}
+
+const showProductsSection = () => {
+  currentView.value = 'site'
+  selectedProductSlug.value = ''
+  window.history.pushState(null, '', '/#products')
+  document.title = defaultTitle
+  setTimeout(() => {
+    const el = document.getElementById('products')
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' })
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+  }, 60)
+}
+
+const handleNavbarNavigate = (href) => {
+  if (currentView.value !== 'site') {
+    currentView.value = 'site'
+    selectedProductSlug.value = ''
+    window.history.pushState(null, '', `/${href}`)
+    document.title = defaultTitle
+    setTimeout(() => {
+      const el = document.querySelector(href)
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth' })
+      }
+    }, 80)
+  }
+}
+
+const handleNavHome = () => {
+  if (currentView.value !== 'site') {
+    showSite()
+  } else {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 }
 
 const handleScroll = () => {
@@ -55,6 +142,7 @@ onMounted(() => {
   window.addEventListener('hashchange', checkRoute)
   window.addEventListener('popstate', checkRoute)
   window.addEventListener('open-admin-portal', showAdmin)
+  window.addEventListener('nav-home', handleNavHome)
   window.addEventListener('scroll', handleScroll, { passive: true })
 })
 
@@ -62,6 +150,7 @@ onUnmounted(() => {
   window.removeEventListener('hashchange', checkRoute)
   window.removeEventListener('popstate', checkRoute)
   window.removeEventListener('open-admin-portal', showAdmin)
+  window.removeEventListener('nav-home', handleNavHome)
   window.removeEventListener('scroll', handleScroll)
 })
 </script>
@@ -73,16 +162,25 @@ onUnmounted(() => {
       <AdminPanel @back="showSite" />
     </template>
 
-    <!-- Main Public Website View -->
+    <!-- Public Website & Product Detail Views -->
     <template v-else>
       <!-- Sticky Navigation Bar -->
-      <AppNavbar @open-admin="showAdmin" />
+      <AppNavbar @open-admin="showAdmin" @navigate="handleNavbarNavigate" />
+
+      <!-- Product Detail View -->
+      <v-main v-if="currentView === 'product-detail'">
+        <ProductDetailView
+          :slug="selectedProductSlug"
+          @back="showProductsSection"
+          @select-product="openProductDetail"
+        />
+      </v-main>
 
       <!-- Main Website Content Sections -->
-      <v-main>
+      <v-main v-else>
         <HeroSection />
         <ServicesSection />
-        <ProductsSection />
+        <ProductsSection @select-product="openProductDetail" />
         <CoursesSection />
         <TechSection />
         <WhyUsSection />

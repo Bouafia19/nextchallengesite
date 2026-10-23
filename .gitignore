@@ -8,3 +8,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+
+# Local Audit Artifacts
+MONGODB_ATLAS_ACCOUNT_AUDIT.md
+NEXTCHALLENGE_MONGODB_SETUP_REPORT.md

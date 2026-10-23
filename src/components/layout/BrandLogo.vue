@@ -28,10 +28,17 @@ const computedHeight = computed(() => {
   const h = props.height || props.size || 42
   return typeof h === 'number' ? `${h}px` : h
 })
+
+const handleClick = (e) => {
+  if (props.to === '#home' && (window.location.pathname.startsWith('/products/') || window.location.pathname === '/admin')) {
+    e.preventDefault()
+    window.dispatchEvent(new CustomEvent('nav-home'))
+  }
+}
 </script>
 
 <template>
-  <a :href="to" class="brand-logo" aria-label="Next Challenge Home">
+  <a :href="to" class="brand-logo" aria-label="Next Challenge Home" @click="handleClick">
     <img
       src="/next-challenge-modernized-logo.png"
       alt="Next Challenge Logo"

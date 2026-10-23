@@ -99,13 +99,15 @@
     "liveDeployment": "Déploiement En Ligne",
     "verifiedBuild": "Build Vérifié",
     "renderProduction": "Production Render",
+    "cardExploreHint": "Cliquer pour voir la fiche détaillée et les applications en ligne",
+    "viewDetails": "Explorer les Détails",
     "items": {
       "fleetora": {
         "badge": "Mobilité & Logistique",
         "category": "Plateforme de Gestion des Transports",
         "tagline": "Plateforme Unifiée de Transport & Flottes de Transporteurs",
         "description": "Une solution moderne de gestion de flotte et d'opérations de transport reliant clients, chauffeurs, véhicules et expéditions à travers une plateforme numérique intégrée.",
-        "buttonText": "Voir Fleetora",
+        "buttonText": "Explorer les Détails",
         "highlights": [
           "Gestion complète des expéditions & dispatching",
           "Portail de réservation expéditeur / client",
@@ -118,7 +120,7 @@
         "category": "Système de Gestion des Stocks & ERP",
         "tagline": "Gestion Moderne des Stocks & Opérations Multi-Dépôts",
         "description": "Une solution moderne de gestion d'inventaire conçue pour simplifier les opérations de stock, la facturation et le suivi commercial des entreprises.",
-        "buttonText": "Voir la Démo",
+        "buttonText": "Explorer les Détails",
         "highlights": [
           "Grand livre de stock multi-dépôts & transferts",
           "Facturation commerciale A4 & tickets de caisse POS",
@@ -131,7 +133,7 @@
         "category": "Plateforme Touristique & Voyages",
         "tagline": "Plateforme Complète d'Expériences Touristiques",
         "description": "Une plateforme touristique moderne conçue pour proposer des solutions numériques innovantes aux acteurs du voyage et du tourisme.",
-        "buttonText": "Explorer Touriva",
+        "buttonText": "Explorer les Détails",
         "highlights": [
           "Découverte d'attractions & cartes interactives",
           "Circuits guidés & réservation d'excursions",
@@ -140,6 +142,29 @@
         ]
       }
     }
+  },
+  "productDetail": {
+    "backToProducts": "Retour aux Produits",
+    "breadcrumbHome": "Accueil",
+    "breadcrumbProducts": "Produits",
+    "liveDeployment": "Déploiement En Ligne",
+    "verifiedProduction": "Production Vérifiée",
+    "openLiveDemo": "Ouvrir la Démo",
+    "openLiveApp": "Lancer l'Application",
+    "openAdminPanel": "Accéder à l'Administration",
+    "downloadApk": "Télécharger l'APK Android",
+    "apkAvailable": "Téléchargements APK Android Vérifiés",
+    "apkDescription": "Packages APK Android natifs conçus pour terminaux mobiles avec géolocalisation, caméra et fonctionnement hors ligne.",
+    "platformsTitle": "Plateformes & Architectures Prises en Charge",
+    "applicationsTitle": "Écosystème Applicatif & Portails en Ligne",
+    "applicationsSubtitle": "Des applications distinctes déployées pour chaque rôle et profil d'utilisateur.",
+    "featuresTitle": "Capacités Clés & Fonctionnalités Techniques",
+    "useCasesTitle": "Public Cible & Cas d'Usage Métier",
+    "launchApp": "Ouvrir le Portail",
+    "directDownload": "Téléchargement Direct",
+    "contactCtaTitle": "Vous souhaitez déployer ou adapter cette solution pour votre entreprise ?",
+    "contactCtaSubtitle": "Next Challenge conçoit des logiciels d'entreprise sur mesure, des architectures multi-tenants et des déploiements cloud sécurisés.",
+    "contactCtaBtn": "Discuter d'un Déploiement Sur Mesure"
   },
   "courses": {
     "badge": "Formations & Certifications",

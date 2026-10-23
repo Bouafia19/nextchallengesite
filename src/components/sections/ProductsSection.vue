@@ -3,8 +3,14 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { siteConfig } from '@/config/site.js'
 
+const emit = defineEmits(['select-product'])
+
 const { t, tm, locale } = useI18n()
 const isRtl = computed(() => locale.value === 'ar')
+
+const navigateToDetail = (slug) => {
+  emit('select-product', slug)
+}
 </script>
 
 <template>
@@ -35,8 +41,14 @@ const isRtl = computed(() => locale.value === 'ar')
           class="d-flex"
         >
           <v-card
-            class="nc-glass-card product-card w-100 d-flex flex-column justify-space-between"
+            class="nc-glass-card product-card w-100 d-flex flex-column justify-space-between cursor-pointer"
             rounded="xl"
+            role="button"
+            tabindex="0"
+            :aria-label="product.name + ' - ' + t('products.cardExploreHint')"
+            @click="navigateToDetail(product.slug)"
+            @keydown.enter.prevent="navigateToDetail(product.slug)"
+            @keydown.space.prevent="navigateToDetail(product.slug)"
           >
             <!-- Card Visual Banner -->
             <div
@@ -58,21 +70,39 @@ const isRtl = computed(() => locale.value === 'ar')
                 </div>
               </div>
 
-              <!-- Center Product Graphic Element -->
-              <div class="py-6 text-center">
-                <v-icon :icon="product.icon" size="64" color="white" class="product-visual-icon" />
-                <div class="text-white text-h5 font-weight-extrabold mt-2 tracking-tight">
+              <!-- Center Product Graphic Element (Authentic Brand Logo) -->
+              <div class="py-5 text-center">
+                <div class="product-brand-logo-wrap mb-2">
+                  <img
+                    v-if="product.logo"
+                    :src="product.logo"
+                    :alt="product.logoAlt || product.name"
+                    class="product-brand-img"
+                    loading="lazy"
+                  />
+                  <v-icon
+                    v-else
+                    :icon="product.icon"
+                    size="64"
+                    color="white"
+                    class="product-visual-icon"
+                  />
+                </div>
+                <div class="text-white text-h5 font-weight-extrabold mt-1 tracking-tight">
                   {{ product.name }}
                 </div>
-                <div class="text-caption text-white opacity-80 font-weight-medium">
+                <div class="text-caption text-white opacity-85 font-weight-medium">
                   {{ t('products.items.' + product.key + '.category') }}
                 </div>
               </div>
 
-              <!-- Micro Status -->
+              <!-- Micro Status & Detail Page Affordance -->
               <div class="d-flex align-center justify-space-between text-caption text-white opacity-90 mono-font">
                 <span>{{ t('products.verifiedBuild') }}</span>
-                <span>{{ t('products.renderProduction') }}</span>
+                <span class="d-flex align-center font-weight-bold">
+                  {{ t('products.viewDetails') }}
+                  <v-icon :icon="isRtl ? 'mdi-chevron-left' : 'mdi-chevron-right'" size="14" class="ml-1" />
+                </span>
               </div>
             </div>
 
@@ -85,9 +115,24 @@ const isRtl = computed(() => locale.value === 'ar')
                 </div>
 
                 <!-- Main Description -->
-                <p class="text-body-2 text-medium-emphasis mb-5 line-height-relaxed">
+                <p class="text-body-2 text-medium-emphasis mb-4 line-height-relaxed">
                   {{ t('products.items.' + product.key + '.description') }}
                 </p>
+
+                <!-- Platform Badges -->
+                <div v-if="product.platforms && product.platforms.length > 0" class="d-flex flex-wrap ga-1 mb-4">
+                  <v-chip
+                    v-for="(plat, pIdx) in product.platforms.slice(0, 3)"
+                    :key="pIdx"
+                    size="x-small"
+                    color="primary"
+                    variant="tonal"
+                    class="font-weight-medium"
+                  >
+                    <v-icon :icon="plat.icon || 'mdi-check'" start size="12" />
+                    {{ plat.name }}
+                  </v-chip>
+                </div>
 
                 <!-- Key Highlights -->
                 <div class="mb-5">
@@ -115,28 +160,42 @@ const isRtl = computed(() => locale.value === 'ar')
                     :key="tag"
                     size="x-small"
                     variant="tonal"
-                    class="font-weight-medium"
+                    class="font-weight-medium opacity-80"
                   >
                     {{ tag }}
                   </v-chip>
                 </div>
               </div>
 
-              <!-- CTA Button (New Window / Tab) -->
-              <div class="pt-4 border-t border-subtle">
+              <!-- CTA Actions Area: Open Detail Page (Primary) + Direct Link Icon -->
+              <div class="pt-4 border-t border-subtle d-flex align-center justify-space-between ga-2">
                 <v-btn
-                  block
-                  :href="product.url"
-                  target="_blank"
-                  rel="noopener noreferrer"
                   color="primary"
                   variant="flat"
                   size="large"
-                  class="font-weight-bold btn-shimmer"
-                  append-icon="mdi-open-in-new"
+                  class="font-weight-bold flex-grow-1 btn-shimmer"
+                  :append-icon="isRtl ? 'mdi-arrow-left' : 'mdi-arrow-right'"
+                  @click.stop="navigateToDetail(product.slug)"
                 >
-                  {{ t('products.items.' + product.key + '.buttonText') }}
+                  {{ t('products.viewDetails') }}
                 </v-btn>
+
+                <v-tooltip :text="t('productDetail.openLiveDemo')" location="top">
+                  <template #activator="{ props: tooltipProps }">
+                    <v-btn
+                      v-bind="tooltipProps"
+                      :href="product.url"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      icon="mdi-open-in-new"
+                      variant="outlined"
+                      color="primary"
+                      size="large"
+                      :aria-label="product.name + ' - ' + t('productDetail.openLiveDemo')"
+                      @click.stop
+                    />
+                  </template>
+                </v-tooltip>
               </div>
             </div>
           </v-card>
@@ -151,18 +210,25 @@ const isRtl = computed(() => locale.value === 'ar')
   max-width: 740px;
 }
 
+.cursor-pointer {
+  cursor: pointer;
+}
+
 .product-card {
   overflow: hidden;
   border-radius: 24px !important;
-  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s ease;
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s ease, border-color 0.35s ease;
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .product-card:hover {
   transform: translateY(-8px);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.25) !important;
+  border-color: rgba(59, 130, 246, 0.4);
 }
 
 .product-banner {
-  min-height: 190px;
+  min-height: 210px;
   position: relative;
   overflow: hidden;
 }
@@ -176,6 +242,30 @@ const isRtl = computed(() => locale.value === 'ar')
   bottom: 0;
   background: radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.2) 0%, transparent 60%);
   pointer-events: none;
+}
+
+.product-brand-logo-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 76px;
+  height: 76px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.product-brand-img {
+  max-width: 54px;
+  max-height: 54px;
+  object-fit: contain;
+}
+
+.product-card:hover .product-brand-logo-wrap {
+  transform: scale(1.12) rotate(-2deg);
 }
 
 .product-visual-icon {

@@ -32,7 +32,7 @@ onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll)
 })
 
-const emit = defineEmits(['open-admin'])
+const emit = defineEmits(['open-admin', 'navigate'])
 
 const openAdminPortal = () => {
   drawer.value = false
@@ -42,6 +42,7 @@ const openAdminPortal = () => {
 
 const navigateTo = (href) => {
   drawer.value = false
+  emit('navigate', href)
   const target = document.querySelector(href)
   if (target) {
     target.scrollIntoView({ behavior: 'smooth' })

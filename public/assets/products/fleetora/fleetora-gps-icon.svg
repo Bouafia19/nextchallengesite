@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#002247"/>
+      <stop offset="50%" stop-color="#00366F"/>
+      <stop offset="100%" stop-color="#004C97"/>
+    </linearGradient>
+
+    <!-- Accent / Cyan Route Gradient -->
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0284C7"/>
+      <stop offset="50%" stop-color="#0EA5E9"/>
+      <stop offset="100%" stop-color="#38BDF8"/>
+    </linearGradient>
+
+    <!-- White / Silver Gradient for Main Pin -->
+    <linearGradient id="whiteGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#E2E8F0"/>
+    </linearGradient>
+
+    <!-- Ground Shadow for Pin Base -->
+    <radialGradient id="groundShadow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#00142E" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#00142E" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Drop Shadow -->
+    <filter id="pinShadow" x="-25%" y="-25%" width="150%" height="150%">
+      <feDropShadow dx="0" dy="20" stdDeviation="24" flood-color="#000e24" flood-opacity="0.55"/>
+    </filter>
+
+    <!-- Subtle Glow for Cyan Elements -->
+    <filter id="accentGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="12" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+<rect width="1024" height="1024" rx="224" fill="url(#bgGrad)"/>
+  <g opacity="0.14" stroke="#38BDF8" stroke-width="3" fill="none">
+    <circle cx="512" cy="512" r="390" stroke-dasharray="16 12"/>
+    <circle cx="512" cy="512" r="290"/>
+    <path d="M100 780 C 340 850, 680 700, 924 820" stroke-width="4"/>
+    <path d="M140 220 C 400 150, 650 320, 890 200" stroke-width="4"/>
+  </g>
+  <g opacity="0.6">
+    <ellipse cx="512" cy="808" rx="140" ry="28" fill="url(#groundShadow)"/>
+    <ellipse cx="512" cy="808" rx="110" ry="22" stroke="#0EA5E9" stroke-width="3" fill="none" opacity="0.4"/>
+    <ellipse cx="512" cy="808" rx="55" ry="11" stroke="#38BDF8" stroke-width="2.5" fill="none" opacity="0.7"/>
+  </g>
+  <!-- Main GPS Pin Group -->
+  <g filter="url(#pinShadow)">
+    <path d="M 512 185
+  A 215 215 0 0 1 696.90 509.71
+  L 525.76 781.84
+  A 16 16 0 0 1 498.24 781.84
+  L 327.10 509.71
+  A 215 215 0 0 1 512 185
+  Z" fill="url(#whiteGrad)"/>
+    <circle cx="512" cy="400" r="125" fill="#002855"/>
+    <circle cx="512" cy="400" r="118" stroke="#0EA5E9" stroke-width="4" stroke-opacity="0.35" fill="none"/>
+    <g transform="translate(512, 400)">
+      <path d="M 0 -80 L 65 52 L 0 28 L -65 52 Z" fill="url(#accentGrad)" filter="url(#accentGlow)"/>
+      <path d="M 0 -80 L 0 28 L -65 52 Z" fill="#FFFFFF" opacity="0.18"/>
+      <circle cx="0" cy="0" r="14" fill="#38BDF8" filter="url(#accentGlow)"/>
+      <circle cx="0" cy="0" r="7" fill="#FFFFFF"/>
+    </g>
+  </g>
+</svg>
