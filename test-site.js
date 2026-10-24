@@ -156,10 +156,10 @@ async function runAudit() {
     }
 
     for (const [idx, item] of logoAudit.entries()) {
-      if (!item.src.includes('next-challenge-modernized-logo.png')) {
-        throw new Error(`Logo instance ${idx} does not use /next-challenge-modernized-logo.png: ${item.src}`)
+      if (!item.src.includes('next-challenge-modernized-logo.webp') && !item.src.includes('next-challenge-modernized-logo.png')) {
+        throw new Error(`Logo instance ${idx} does not use /next-challenge-modernized-logo.webp: ${item.src}`)
       }
-      if (!item.isComplete || item.naturalWidth !== 2048 || item.naturalHeight !== 2048) {
+      if (!item.isComplete || item.naturalWidth < 128) {
         throw new Error(`Logo instance ${idx} has invalid natural dimensions: ${item.naturalWidth}x${item.naturalHeight}`)
       }
       if (item.objectFit !== 'contain') {

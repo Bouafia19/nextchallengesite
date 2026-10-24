@@ -15,7 +15,10 @@ const courseSchema = new mongoose.Schema(
     slug: {
       type: String,
       trim: true,
-      lowercase: true
+      lowercase: true,
+      unique: true,
+      sparse: true,
+      index: true
     },
     description: {
       type: String,

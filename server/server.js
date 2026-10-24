@@ -21,6 +21,7 @@ import Contact from './models/Contact.js'
 import Course from './models/Course.js'
 import Enrollment from './models/Enrollment.js'
 import { requireAdminAuth } from './middleware/auth.js'
+import { sendContactNotification } from './mailer.js'
 
 const app = express()
 const PORT = process.env.PORT || 5000
@@ -291,6 +292,13 @@ app.get('/health', (req, res) => {
 // POST /api/contact - Saves inquiry submissions directly to MongoDB
 app.post('/api/contact', rateLimiter, async (req, res) => {
   try {
+    if (!isDbConnected()) {
+      return res.status(503).json({
+        success: false,
+        message: 'Database temporarily unavailable. Please try again shortly or reach us directly at 0552 56 96 54.'
+      })
+    }
+
     const { fullName, name, email, phone, company, subject, message } = req.body || {}
 
     const senderName = (fullName || name || '').trim()
@@ -339,6 +347,11 @@ app.post('/api/contact', rateLimiter, async (req, res) => {
     const savedDoc = await newSubmission.save()
 
     console.log(`[Contact Submission] Stored message from "${savedDoc.name}" <${savedDoc.email}> (ID: ${savedDoc._id})`)
+
+    // Attempt email / webhook notification delivery asynchronously without failing DB persistence
+    sendContactNotification(savedDoc).catch((err) => {
+      console.warn('[Contact Notification] Background dispatch error:', err.message || err)
+    })
 
     return res.status(201).json({
       success: true,
@@ -874,6 +887,12 @@ app.post('/api/admin/courses', requireAdminAuth, async (req, res) => {
       course
     })
   } catch (err) {
+    if (err.code === 11000) {
+      return res.status(409).json({
+        success: false,
+        message: 'A course with this title or slug already exists. Course slugs must be unique.'
+      })
+    }
     console.error('[Admin Course Create Error]', err.message || err)
     return res.status(500).json({
       success: false,
@@ -929,6 +948,12 @@ app.put('/api/admin/courses/:id', requireAdminAuth, async (req, res) => {
       course
     })
   } catch (err) {
+    if (err.code === 11000) {
+      return res.status(409).json({
+        success: false,
+        message: 'A course with this title or slug already exists. Course slugs must be unique.'
+      })
+    }
     console.error('[Admin Course Update Error]', err.message || err)
     return res.status(500).json({
       success: false,

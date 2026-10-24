@@ -2,7 +2,11 @@ import puppeteer from 'puppeteer-core'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import fs from 'node:fs'
+import crypto from 'node:crypto'
 import { spawn } from 'node:child_process'
+import dotenv from 'dotenv'
+
+dotenv.config()
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const screenshotsDir = path.join(__dirname, 'test-screenshots', 'admin')
@@ -13,7 +17,7 @@ if (!fs.existsSync(screenshotsDir)) {
 
 const TEST_PORT = 5199
 const BASE_URL = `http://localhost:${TEST_PORT}`
-const ADMIN_KEY = 'nc_admin_secret_2026'
+const ADMIN_KEY = (process.env.ADMIN_API_KEY || process.env.TEST_ADMIN_KEY || `nc_test_ephemeral_${crypto.randomBytes(16).toString('hex')}`).trim()
 
 let serverProcess = null
 
@@ -26,7 +30,7 @@ function startServer() {
         ...process.env,
         PORT: String(TEST_PORT),
         ADMIN_API_KEY: ADMIN_KEY,
-        NODE_ENV: 'production'
+        NODE_ENV: process.env.NODE_ENV || 'test'
       },
       stdio: ['ignore', 'pipe', 'pipe']
     })
@@ -78,7 +82,7 @@ async function runTests() {
       throw new Error(`Expected 'Invalid Admin API Key. Access denied.', got ${badKeyData.message}`)
     }
 
-    // 3. Test Quotes in Header (e.g. '"nc_admin_secret_2026"')
+    // 3. Test Quotes in Header (e.g. '"<ADMIN_KEY>"')
     const quotedKeyRes = await fetch(`${BASE_URL}/api/admin/verify`, {
       method: 'POST',
       headers: { 'x-admin-key': `"${ADMIN_KEY}"` }

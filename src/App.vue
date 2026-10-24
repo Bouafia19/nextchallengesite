@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, defineAsyncComponent } from 'vue'
 import { useI18n } from 'vue-i18n'
 import AppNavbar from './components/layout/AppNavbar.vue'
 import HeroSection from './components/sections/HeroSection.vue'
@@ -11,8 +11,10 @@ import WhyUsSection from './components/sections/WhyUsSection.vue'
 import AboutSection from './components/sections/AboutSection.vue'
 import ContactSection from './components/sections/ContactSection.vue'
 import AppFooter from './components/layout/AppFooter.vue'
-import AdminPanel from './components/admin/AdminPanel.vue'
-import ProductDetailView from './components/products/ProductDetailView.vue'
+
+// Lazy-load administrative and secondary views to drastically reduce initial visitor bundle size
+const AdminPanel = defineAsyncComponent(() => import('./components/admin/AdminPanel.vue'))
+const ProductDetailView = defineAsyncComponent(() => import('./components/products/ProductDetailView.vue'))
 import { siteConfig } from './config/site.js'
 import { messages } from './plugins/i18n.js'
 
@@ -29,6 +31,15 @@ const defaultTitle = computed(() => {
 watch(locale, () => {
   if (currentView.value === 'site') {
     document.title = defaultTitle.value
+  } else if (currentView.value === 'admin') {
+    document.title = 'Administration | Next Challenge'
+  } else if (currentView.value === 'product-detail' && selectedProductSlug.value) {
+    const matched = siteConfig.products.find(
+      (p) => p.slug === selectedProductSlug.value || p.id === selectedProductSlug.value
+    )
+    if (matched) {
+      document.title = `${matched.name} — ${matched.category} | Next Challenge`
+    }
   }
 })
 
@@ -123,7 +134,7 @@ const handleNavbarNavigate = (href) => {
     currentView.value = 'site'
     selectedProductSlug.value = ''
     window.history.pushState(null, '', `/${href}`)
-    document.title = defaultTitle
+    document.title = defaultTitle.value
     setTimeout(() => {
       const el = document.querySelector(href)
       if (el) {

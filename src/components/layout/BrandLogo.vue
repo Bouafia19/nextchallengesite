@@ -40,7 +40,7 @@ const handleClick = (e) => {
 <template>
   <a :href="to" class="brand-logo" aria-label="Next Challenge Home" @click="handleClick">
     <img
-      src="/next-challenge-modernized-logo.png"
+      src="/next-challenge-modernized-logo.webp"
       alt="Next Challenge Logo"
       class="brand-logo__img"
       :style="{ height: computedHeight }"
