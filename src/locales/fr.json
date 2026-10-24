@@ -23,16 +23,25 @@
   },
   "hero": {
     "locationBadge": "Next Challenge • Sétif, Algérie",
+    "titlePrefix": "Des logiciels",
+    "titleHighlight": "sur mesure",
+    "titleSuffix": "pour faire grandir votre entreprise.",
     "titleBuild": "Bâtir.",
     "titleInnovate": "Innover.",
     "titleTransform": "Transformer.",
-    "subtitle": "Des solutions technologiques conçues autour de votre entreprise.",
-    "description": "Next Challenge développe des applications web modernes, des applications mobiles, des API, des plateformes ERP, des solutions e-commerce, des systèmes propulsés par l'IA et une infrastructure cloud adaptée aux exigences des entreprises modernes.",
-    "ctaContact": "Contactez-nous",
-    "ctaProducts": "Découvrir nos produits",
+    "subtitle": "Applications web et mobiles, ERP, intelligence artificielle et automatisation.",
+    "description": "Nous concevons des solutions numériques adaptées aux besoins réels de votre activité, fiables et performantes pour les entreprises en Algérie et à l'international.",
+    "ctaContact": "Discutons de votre projet",
+    "ctaProducts": "Découvrir nos solutions",
     "trustTailored": "Architecture Sur Mesure",
     "trustEnterprise": "Fiabilité Entreprise",
     "trustLocation": "Basé à El Hidab, Sétif"
+  },
+  "whatsapp": {
+    "ariaLabel": "Discuter avec nous sur WhatsApp",
+    "tooltip": "WhatsApp : 0552 56 96 54",
+    "defaultMessage": "Bonjour Next Challenge, je souhaite discuter d'un projet numérique pour mon entreprise.",
+    "contactSectionCta": "Discuter directement sur WhatsApp"
   },
   "services": {
     "badge": "Compétences de Bout en Bout",

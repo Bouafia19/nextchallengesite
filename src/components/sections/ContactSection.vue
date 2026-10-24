@@ -23,6 +23,11 @@ const formData = reactive({
 
 const subjectOptions = computed(() => tm('contact.subjects') || [])
 
+const whatsappUrl = computed(() => {
+  const msg = t('whatsapp.defaultMessage')
+  return `https://wa.me/213552569654?text=${encodeURIComponent(msg)}`
+})
+
 // Validation rules
 const rules = computed(() => ({
   required: (v) => !!v?.trim() || t('contact.validation.required'),
@@ -119,9 +124,26 @@ const resetSuccess = () => {
         <h2 class="text-h3 font-weight-bold mb-4 tracking-tight">
           {{ t('contact.title') }}
         </h2>
-        <p class="text-h6 font-weight-regular text-medium-emphasis">
+        <p class="text-h6 font-weight-regular text-medium-emphasis mb-6">
           {{ t('contact.subtitle') }}
         </p>
+
+        <!-- Direct WhatsApp Option -->
+        <div class="d-flex justify-center">
+          <v-btn
+            :href="whatsappUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            color="#25D366"
+            variant="flat"
+            size="large"
+            class="font-weight-bold text-white px-7 rounded-pill text-none"
+            prepend-icon="mdi-whatsapp"
+            elevation="4"
+          >
+            {{ t('whatsapp.contactSectionCta') }}
+          </v-btn>
+        </div>
       </div>
 
       <v-row justify="center">

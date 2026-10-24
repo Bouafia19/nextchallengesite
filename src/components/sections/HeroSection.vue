@@ -30,9 +30,9 @@ const scrollTo = (href) => {
 
           <!-- Main Headline -->
           <h1 class="hero-title mb-4">
-            <span>{{ t('hero.titleBuild') }}</span>
-            <span class="text-gradient mx-2">{{ t('hero.titleInnovate') }}</span>
-            <span>{{ t('hero.titleTransform') }}</span>
+            <span>{{ t('hero.titlePrefix') }}</span>
+            <span class="text-gradient mx-2">{{ t('hero.titleHighlight') }}</span>
+            <span>{{ t('hero.titleSuffix') }}</span>
           </h1>
 
           <!-- Subtitle -->
@@ -53,7 +53,7 @@ const scrollTo = (href) => {
               variant="flat"
               size="x-large"
               class="btn-shimmer font-weight-bold px-8"
-              prepend-icon="mdi-email-fast-outline"
+              prepend-icon="mdi-chat-processing-outline"
               @click="scrollTo('#contact')"
             >
               {{ t('hero.ctaContact') }}

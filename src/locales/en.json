@@ -23,16 +23,25 @@
   },
   "hero": {
     "locationBadge": "Next Challenge • Sétif, Algeria",
+    "titlePrefix": "Custom software",
+    "titleHighlight": "engineered",
+    "titleSuffix": "to scale your business.",
     "titleBuild": "Build.",
     "titleInnovate": "Innovate.",
     "titleTransform": "Transform.",
-    "subtitle": "Technology solutions built around your business.",
-    "description": "Next Challenge develops modern web applications, mobile apps, APIs, ERP platforms, e-commerce solutions, AI-powered systems, and cloud infrastructure tailored to the needs of modern businesses.",
-    "ctaContact": "Contact Us",
-    "ctaProducts": "Explore Our Products",
+    "subtitle": "Web & mobile applications, ERP platforms, artificial intelligence, and automation.",
+    "description": "We design high-performance, tailored digital solutions built around your operational needs, serving ambitious businesses in Algeria and internationally.",
+    "ctaContact": "Let’s discuss your project",
+    "ctaProducts": "Explore our solutions",
     "trustTailored": "Tailored Architecture",
     "trustEnterprise": "Enterprise Reliability",
     "trustLocation": "Based in El Hidab, Sétif"
+  },
+  "whatsapp": {
+    "ariaLabel": "Chat with us on WhatsApp",
+    "tooltip": "WhatsApp: 0552 56 96 54",
+    "defaultMessage": "Hello Next Challenge, I would like to discuss a digital project for my business.",
+    "contactSectionCta": "Chat directly on WhatsApp"
   },
   "services": {
     "badge": "End-to-End Capabilities",

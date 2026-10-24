@@ -18,6 +18,8 @@ export const siteConfig = {
   location: 'El Hidab, Sétif, Algeria',
   phone: '0552 56 96 54',
   phoneTel: 'tel:0552569654',
+  whatsappNumber: '213552569654',
+  whatsappUrl: 'https://wa.me/213552569654',
   email: 'nextchallenge2021@gmail.com',
   emailMailto: 'mailto:nextchallenge2021@gmail.com',
 

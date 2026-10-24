@@ -27,6 +27,11 @@ const defaultTitle = computed(() => {
   return messages[locale.value]?.meta?.title || 'Next Challenge | Développement Logiciel & Solutions Numériques'
 })
 
+const whatsappUrl = computed(() => {
+  const msg = messages[locale.value]?.whatsapp?.defaultMessage || "Bonjour Next Challenge, je souhaite discuter d'un projet numérique pour mon entreprise."
+  return `https://wa.me/213552569654?text=${encodeURIComponent(msg)}`
+})
+
 // Sync title when locale changes
 watch(locale, () => {
   if (currentView.value === 'site') {
@@ -214,6 +219,18 @@ onUnmounted(() => {
       <!-- Footer -->
       <AppFooter @open-admin="showAdmin" />
 
+      <!-- Floating WhatsApp Quick-Chat Action -->
+      <a
+        :href="whatsappUrl"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="floating-whatsapp-btn"
+        :aria-label="t('whatsapp.ariaLabel')"
+        :title="t('whatsapp.tooltip')"
+      >
+        <v-icon icon="mdi-whatsapp" size="32" color="white" />
+      </a>
+
       <!-- Floating Back to Top Button -->
       <v-fade-transition>
         <v-btn
@@ -239,18 +256,73 @@ onUnmounted(() => {
   flex-direction: column;
 }
 
-.back-to-top-btn {
+.floating-whatsapp-btn {
   position: fixed;
   bottom: 24px;
+  right: 24px;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background-color: #25d366;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 20px rgba(37, 211, 102, 0.45);
+  z-index: 998;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s ease, background-color 0.25s ease;
+  text-decoration: none;
+}
+
+.floating-whatsapp-btn:hover,
+.floating-whatsapp-btn:focus-visible {
+  transform: scale(1.08);
+  background-color: #20ba5a;
+  box-shadow: 0 8px 26px rgba(37, 211, 102, 0.6);
+  outline: 2px solid white;
+  outline-offset: 2px;
+}
+
+.back-to-top-btn {
+  position: fixed;
+  bottom: 92px;
   right: 24px;
   z-index: 999;
   border-radius: 50% !important;
   box-shadow: 0 8px 24px rgba(91, 84, 232, 0.4) !important;
 }
 
+:deep([dir="rtl"]) .floating-whatsapp-btn,
+:global([dir="rtl"] .floating-whatsapp-btn) {
+  right: auto !important;
+  left: 24px !important;
+}
+
 :deep([dir="rtl"]) .back-to-top-btn,
 :global([dir="rtl"] .back-to-top-btn) {
   right: auto !important;
   left: 24px !important;
+}
+
+@media (max-width: 600px) {
+  .floating-whatsapp-btn {
+    bottom: 20px;
+    right: 20px;
+    width: 52px;
+    height: 52px;
+  }
+  .back-to-top-btn {
+    bottom: 82px;
+    right: 20px;
+  }
+  :deep([dir="rtl"]) .floating-whatsapp-btn,
+  :global([dir="rtl"] .floating-whatsapp-btn) {
+    right: auto !important;
+    left: 20px !important;
+  }
+  :deep([dir="rtl"]) .back-to-top-btn,
+  :global([dir="rtl"] .back-to-top-btn) {
+    right: auto !important;
+    left: 20px !important;
+  }
 }
 </style>
