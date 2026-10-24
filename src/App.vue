@@ -48,11 +48,33 @@ watch(locale, () => {
   }
 })
 
+const isAdminGateActive = () => {
+  return (
+    document.querySelector('meta[name="nc-admin-gate"]')?.content === 'active' ||
+    window.__NC_ADMIN_GATE__ === true
+  )
+}
+
 const checkRoute = () => {
   const hash = window.location.hash.toLowerCase()
   const path = window.location.pathname.toLowerCase()
 
+  // Deny legacy /admin and #admin access: strip hash and redirect to site view
   if (path === '/admin' || hash === '#admin' || hash === '#/admin') {
+    currentView.value = 'site'
+    selectedProductSlug.value = ''
+    if (hash === '#admin' || hash === '#/admin') {
+      window.location.hash = ''
+    }
+    if (path === '/admin') {
+      window.history.pushState(null, '', '/')
+    }
+    document.title = defaultTitle.value
+    return
+  }
+
+  // Activate admin interface ONLY when the server-side gate has authenticated the request URL
+  if (isAdminGateActive() && path !== '/' && !path.startsWith('/products/')) {
     currentView.value = 'admin'
     selectedProductSlug.value = ''
     document.title = 'Administration | Next Challenge'
@@ -83,17 +105,13 @@ const checkRoute = () => {
   document.title = defaultTitle.value
 }
 
-const showAdmin = () => {
-  currentView.value = 'admin'
-  selectedProductSlug.value = ''
-  document.title = 'Administration | Next Challenge'
-  window.location.hash = '#admin'
-}
-
 const showSite = () => {
   currentView.value = 'site'
   selectedProductSlug.value = ''
-  if (window.location.pathname === '/admin') {
+  window.__NC_ADMIN_GATE__ = false
+  const metaGate = document.querySelector('meta[name="nc-admin-gate"]')
+  if (metaGate) metaGate.remove()
+  if (window.location.pathname !== '/') {
     window.history.pushState(null, '', '/')
   } else {
     window.location.hash = ''
@@ -169,7 +187,6 @@ onMounted(() => {
   checkRoute()
   window.addEventListener('hashchange', checkRoute)
   window.addEventListener('popstate', checkRoute)
-  window.addEventListener('open-admin-portal', showAdmin)
   window.addEventListener('nav-home', handleNavHome)
   window.addEventListener('scroll', handleScroll, { passive: true })
 })
@@ -177,7 +194,6 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('hashchange', checkRoute)
   window.removeEventListener('popstate', checkRoute)
-  window.removeEventListener('open-admin-portal', showAdmin)
   window.removeEventListener('nav-home', handleNavHome)
   window.removeEventListener('scroll', handleScroll)
 })
@@ -193,7 +209,7 @@ onUnmounted(() => {
     <!-- Public Website & Product Detail Views -->
     <template v-else>
       <!-- Sticky Navigation Bar -->
-      <AppNavbar @open-admin="showAdmin" @navigate="handleNavbarNavigate" />
+      <AppNavbar @navigate="handleNavbarNavigate" />
 
       <!-- Product Detail View -->
       <v-main v-if="currentView === 'product-detail'">
@@ -217,7 +233,7 @@ onUnmounted(() => {
       </v-main>
 
       <!-- Footer -->
-      <AppFooter @open-admin="showAdmin" />
+      <AppFooter />
 
       <!-- Floating WhatsApp Quick-Chat Action -->
       <a

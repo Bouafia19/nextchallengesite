@@ -163,7 +163,9 @@
     "openAdminPanel": "Accéder à l'Administration",
     "downloadApk": "Télécharger l'APK Android",
     "apkAvailable": "Téléchargements APK Android Vérifiés",
-    "apkDescription": "Packages APK Android natifs conçus pour terminaux mobiles avec géolocalisation, caméra et fonctionnement hors ligne.",
+    "apkDescription": "Applications APK Android natives conçues pour terminaux mobiles avec géolocalisation, caméra et fonctionnement hors ligne.",
+    "target": "Cible",
+    "compatibility": "Compatibilité",
     "platformsTitle": "Plateformes & Architectures Prises en Charge",
     "applicationsTitle": "Écosystème Applicatif & Portails en Ligne",
     "applicationsSubtitle": "Des applications distinctes déployées pour chaque rôle et profil d'utilisateur.",
@@ -360,5 +362,11 @@
   "common": {
     "algeria": "Algérie",
     "setif": "Sétif"
+  },
+  "social": {
+    "followUs": "Suivez-nous :",
+    "linkedin": "Next Challenge sur LinkedIn",
+    "facebook": "Next Challenge sur Facebook",
+    "instagram": "Next Challenge sur Instagram"
   }
 }

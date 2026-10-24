@@ -163,7 +163,9 @@
     "openAdminPanel": "Access Admin Console",
     "downloadApk": "Download Android APK",
     "apkAvailable": "Verified Android APK Downloads",
-    "apkDescription": "Native Android APK packages built for mobile devices with geolocation, camera, and offline capabilities.",
+    "apkDescription": "Native Android APK applications built for mobile devices with geolocation, camera, and offline capabilities.",
+    "target": "Target",
+    "compatibility": "Compatibility",
     "platformsTitle": "Supported Platforms & Architectures",
     "applicationsTitle": "Application Ecosystem & Live Portals",
     "applicationsSubtitle": "Distinct live applications engineered for each stakeholder role in the platform.",
@@ -360,5 +362,11 @@
   "common": {
     "algeria": "Algeria",
     "setif": "Sétif"
+  },
+  "social": {
+    "followUs": "Connect with us:",
+    "linkedin": "Next Challenge on LinkedIn",
+    "facebook": "Next Challenge on Facebook",
+    "instagram": "Next Challenge on Instagram"
   }
 }

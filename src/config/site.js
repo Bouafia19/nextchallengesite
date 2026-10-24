@@ -5,7 +5,7 @@
 
 export const siteConfig = {
   name: 'Next Challenge',
-  legalName: 'EURL NEXT CHALLENGE',
+  legalName: 'Next Challenge',
   tagline: 'Build. Innovate. Transform.',
   subTagline: 'Technology solutions built around your business.',
   heroDescription:
@@ -26,12 +26,39 @@ export const siteConfig = {
   // API base for contact form submissions
   contactApiEndpoint: import.meta.env.VITE_CONTACT_API_URL || '/api/contact',
 
-  // Social Links
+  // Official Social Media Profiles
   social: {
-    facebook: import.meta.env.VITE_FACEBOOK_URL || '',
-    instagram: import.meta.env.VITE_INSTAGRAM_URL || '',
-    linkedin: import.meta.env.VITE_LINKEDIN_URL || ''
+    linkedin: import.meta.env.VITE_LINKEDIN_URL || 'https://www.linkedin.com/company/next-challenge-tech/',
+    facebook: import.meta.env.VITE_FACEBOOK_URL || 'https://www.facebook.com/profile.php?id=61575928927186',
+    instagram: import.meta.env.VITE_INSTAGRAM_URL || 'https://www.instagram.com/nextchallengetech/'
   },
+
+  socialLinks: [
+    {
+      platform: 'linkedin',
+      name: 'LinkedIn',
+      url: import.meta.env.VITE_LINKEDIN_URL || 'https://www.linkedin.com/company/next-challenge-tech/',
+      icon: 'mdi-linkedin',
+      color: '#0A66C2',
+      ariaLabelKey: 'social.linkedin'
+    },
+    {
+      platform: 'facebook',
+      name: 'Facebook',
+      url: import.meta.env.VITE_FACEBOOK_URL || 'https://www.facebook.com/profile.php?id=61575928927186',
+      icon: 'mdi-facebook',
+      color: '#1877F2',
+      ariaLabelKey: 'social.facebook'
+    },
+    {
+      platform: 'instagram',
+      name: 'Instagram',
+      url: import.meta.env.VITE_INSTAGRAM_URL || 'https://www.instagram.com/nextchallengetech/',
+      icon: 'mdi-instagram',
+      color: '#E4405F',
+      ariaLabelKey: 'social.instagram'
+    }
+  ],
 
   // Navigation Links
   navLinks: [
@@ -228,20 +255,30 @@ export const siteConfig = {
       apks: [
         {
           name: 'Fleetora Customer Mobile App',
+          nameFr: 'Application Client & Expéditeur Fleetora',
+          nameEn: 'Fleetora Customer Mobile App',
+          nameAr: 'تطبيق فليتورا للعملاء والشاحنين',
           target: 'Shipper & Customer App',
+          targetFr: 'Application Expéditeurs & Clients',
+          targetEn: 'Shipper & Customer App',
+          targetAr: 'تطبيق العملاء والشاحنين',
           version: '1.0.0',
           size: '14 MB',
           file: '/downloads/fleetora/fleetora-client-production.apk',
-          package: 'com.nextchallenge.tawssil',
           platform: 'Android 8.0+'
         },
         {
           name: 'Fleetora Partner & Driver App',
+          nameFr: 'Application Chauffeur & Partenaire Fleetora',
+          nameEn: 'Fleetora Partner & Driver App',
+          nameAr: 'تطبيق فليتورا للشركاء والسائقين',
           target: 'Transporter & Driver App',
+          targetFr: 'Application Transporteurs & Chauffeurs',
+          targetEn: 'Transporter & Driver App',
+          targetAr: 'تطبيق الناقلين والسائقين',
           version: '1.0.0',
           size: '14 MB',
           file: '/downloads/fleetora/fleetora-partner-production.apk',
-          package: 'com.nextchallenge.tawssil_patenaire',
           platform: 'Android 8.0+'
         }
       ],
@@ -353,7 +390,22 @@ export const siteConfig = {
             'Administrative portal for tourism site curation, hospitality listings, tour guide certification, and excursion reservations.'
         }
       ],
-      apks: [],
+      apks: [
+        {
+          name: 'Touriva Mobile Experience App',
+          nameFr: 'Application Mobile Touriva',
+          nameEn: 'Touriva Mobile Experience App',
+          nameAr: 'تطبيق توريفا للهواتف الذكية',
+          target: 'Traveler & Tourist Mobile App',
+          targetFr: 'Application Mobile Voyageurs & Touristes',
+          targetEn: 'Traveler & Tourist Mobile App',
+          targetAr: 'تطبيق المسافرين والسياح',
+          version: '11.0',
+          size: '12 MB',
+          file: '/downloads/touriva/touriva-client-production.apk',
+          platform: 'Android 6.0+'
+        }
+      ],
       features: [
         {
           title: 'Geo-Spatial Attraction Discovery',

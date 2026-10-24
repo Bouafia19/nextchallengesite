@@ -300,22 +300,25 @@ onMounted(() => {
               v-for="(apk, idx) in product.apks"
               :key="idx"
               cols="12"
-              md="6"
+              :md="product.apks.length === 1 ? 12 : 6"
             >
               <v-card class="pa-5 rounded-xl border-subtle bg-surface-variant d-flex flex-column justify-space-between h-100" variant="outlined">
                 <div class="mb-4">
                   <div class="d-flex align-center justify-space-between ga-2 mb-2">
-                    <span class="text-subtitle-1 font-weight-bold">{{ apk.name }}</span>
+                    <span class="text-subtitle-1 font-weight-bold">
+                      {{ (locale === 'fr' ? apk.nameFr : locale === 'ar' ? apk.nameAr : apk.nameEn) || apk.name }}
+                    </span>
                     <v-chip size="x-small" color="success" variant="tonal" class="font-weight-bold">
                       {{ apk.size }}
                     </v-chip>
                   </div>
                   <div class="text-caption text-medium-emphasis mb-1">
                     <v-icon icon="mdi-shield-check" size="14" color="success" class="mr-1" />
-                    Target: {{ apk.target }}
+                    {{ t('productDetail.target') }}: {{ (locale === 'fr' ? apk.targetFr : locale === 'ar' ? apk.targetAr : apk.targetEn) || apk.target }}
                   </div>
-                  <div class="text-caption mono-font opacity-75">
-                    Package: {{ apk.package }} • {{ apk.platform }}
+                  <div class="text-caption mono-font opacity-75 d-flex align-center">
+                    <v-icon icon="mdi-android" size="14" color="medium-emphasis" class="mr-1" />
+                    <span>{{ t('productDetail.compatibility') }}: {{ apk.platform }}</span>
                   </div>
                 </div>
 

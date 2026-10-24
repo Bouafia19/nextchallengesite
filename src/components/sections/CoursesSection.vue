@@ -1,8 +1,11 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useTheme } from 'vuetify'
 
 const { t, locale } = useI18n()
+const theme = useTheme()
+const isDark = computed(() => theme.global.current.value.dark)
 const isRtl = computed(() => locale.value === 'ar')
 
 const courses = ref([])
@@ -267,14 +270,14 @@ onMounted(() => {
       <!-- Section Header -->
       <div class="text-center max-w-700 mx-auto mb-12">
         <span class="badge-pill mb-3">
-          <v-icon icon="mdi-school-outline" size="16" color="#00c2ff" class="mr-1" />
+          <v-icon icon="mdi-school-outline" size="16" :color="isDark ? '#00c2ff' : 'primary'" class="mr-1" />
           {{ t('courses.badge', 'Curriculum & Academics') }}
         </span>
-        <h2 class="text-h3 font-weight-bold mb-4 tracking-tight text-white">
+        <h2 class="text-h3 font-weight-bold mb-4 tracking-tight course-section-heading">
           <span class="text-gradient-cyan">{{ t('courses.titleHighlight', 'Engineering Masterclasses') }}</span>
           {{ t('courses.titleEnd', '& Practical Training') }}
         </h2>
-        <p class="text-body-1 text-grey-lighten-1 line-height-relaxed">
+        <p class="text-body-1 text-medium-emphasis line-height-relaxed">
           {{
             t(
               'courses.subtitle',
@@ -288,8 +291,8 @@ onMounted(() => {
           <v-btn
             size="small"
             :variant="selectedFilter === 'all' ? 'flat' : 'outlined'"
-            :color="selectedFilter === 'all' ? '#00366F' : 'grey-lighten-1'"
             class="filter-btn font-weight-bold"
+            :class="selectedFilter === 'all' ? 'filter-btn--active' : 'filter-btn--inactive'"
             @click="selectedFilter = 'all'"
           >
             All Tracks ({{ courses.length }})
@@ -297,8 +300,8 @@ onMounted(() => {
           <v-btn
             size="small"
             :variant="selectedFilter === 'vue' ? 'flat' : 'outlined'"
-            :color="selectedFilter === 'vue' ? '#00366F' : 'grey-lighten-1'"
             class="filter-btn font-weight-bold"
+            :class="selectedFilter === 'vue' ? 'filter-btn--active' : 'filter-btn--inactive'"
             @click="selectedFilter = 'vue'"
           >
             Web & Vue.js
@@ -306,8 +309,8 @@ onMounted(() => {
           <v-btn
             size="small"
             :variant="selectedFilter === 'odoo' ? 'flat' : 'outlined'"
-            :color="selectedFilter === 'odoo' ? '#00366F' : 'grey-lighten-1'"
             class="filter-btn font-weight-bold"
+            :class="selectedFilter === 'odoo' ? 'filter-btn--active' : 'filter-btn--inactive'"
             @click="selectedFilter = 'odoo'"
           >
             Odoo & Python
@@ -315,8 +318,8 @@ onMounted(() => {
           <v-btn
             size="small"
             :variant="selectedFilter === 'joomla' ? 'flat' : 'outlined'"
-            :color="selectedFilter === 'joomla' ? '#00366F' : 'grey-lighten-1'"
             class="filter-btn font-weight-bold"
+            :class="selectedFilter === 'joomla' ? 'filter-btn--active' : 'filter-btn--inactive'"
             @click="selectedFilter = 'joomla'"
           >
             Joomla & CMS
@@ -341,37 +344,37 @@ onMounted(() => {
                 <div class="d-flex align-center justify-space-between mb-4">
                   <!-- Icon Box -->
                   <div class="course-icon-box">
-                    <v-icon :icon="course.icon || 'mdi-code-braces'" size="28" color="#00c2ff" />
+                    <v-icon :icon="course.icon || 'mdi-code-braces'" size="28" :color="isDark ? '#00c2ff' : '#0284c7'" />
                   </div>
 
                   <!-- Badge & Duration -->
                   <div class="d-flex align-center ga-2">
                     <v-chip
                       size="x-small"
-                      color="#00c2ff"
+                      :color="isDark ? '#00c2ff' : '#0284c7'"
                       variant="flat"
-                      class="text-slate-900 font-weight-bold px-2"
+                      :class="[isDark ? 'text-slate-900' : 'text-white', 'font-weight-bold px-2']"
                     >
                       {{ course.badge || 'Professional' }}
                     </v-chip>
                     <v-chip
                       v-if="course.duration"
                       size="x-small"
-                      color="blue-lighten-3"
+                      :color="isDark ? 'blue-lighten-3' : 'primary'"
                       variant="tonal"
                       class="font-weight-medium"
                     >
-                      <v-icon icon="mdi-clock-outline" size="12" class="mr-1" />
+                      <v-icon icon="mdi-clock-outline" size="12" :class="isRtl ? 'ml-1' : 'mr-1'" />
                       {{ course.duration }}
                     </v-chip>
                   </div>
                 </div>
 
                 <!-- Course Title & Description -->
-                <h3 class="text-h5 font-weight-bold text-white mb-3">
+                <h3 class="text-h5 font-weight-bold course-card-title mb-3">
                   {{ course.title }}
                 </h3>
-                <p class="text-body-2 text-slate-300 mb-4 line-height-relaxed">
+                <p class="text-body-2 course-card-desc mb-4 line-height-relaxed">
                   {{ course.description }}
                 </p>
 
@@ -390,11 +393,11 @@ onMounted(() => {
               <!-- Interactive Syllabus Section -->
               <div class="syllabus-container px-6 pb-6 border-t">
                 <div class="d-flex align-center justify-space-between mb-3 pt-4">
-                  <span class="text-caption font-weight-bold text-cyan-lighten-3 text-uppercase tracking-wider">
-                    <v-icon icon="mdi-format-list-bulleted-square" size="14" class="mr-1" />
+                  <span class="text-caption font-weight-bold syllabus-header-title text-uppercase tracking-wider">
+                    <v-icon icon="mdi-format-list-bulleted-square" size="14" :class="isRtl ? 'ml-1' : 'mr-1'" />
                     Curriculum Syllabus
                   </span>
-                  <span class="text-caption text-grey-lighten-1">
+                  <span class="text-caption text-medium-emphasis">
                     {{ course.syllabus?.length || 0 }} Modules
                   </span>
                 </div>
@@ -406,7 +409,7 @@ onMounted(() => {
                     :key="mIdx"
                     class="syllabus-panel mb-2"
                   >
-                    <v-expansion-panel-title class="pa-3 text-body-2 font-weight-bold text-slate-200">
+                    <v-expansion-panel-title class="pa-3 text-body-2 font-weight-bold syllabus-panel-title">
                       <div class="d-flex align-center ga-2 text-truncate">
                         <span class="level-badge px-1-5 py-0-5 rounded text-caption font-weight-bold">
                           {{ mod.level || `Level ${mIdx + 1}` }}
@@ -416,16 +419,16 @@ onMounted(() => {
                     </v-expansion-panel-title>
 
                     <v-expansion-panel-text class="pa-3 pt-0">
-                      <ul v-if="mod.topics && mod.topics.length" class="syllabus-topic-list pl-4 mb-0">
+                      <ul v-if="mod.topics && mod.topics.length" class="syllabus-topic-list mb-0" :class="isRtl ? 'pr-4' : 'pl-4'">
                         <li
                           v-for="(topic, tIdx) in mod.topics"
                           :key="tIdx"
-                          class="text-caption text-slate-300 py-1"
+                          class="text-caption syllabus-topic-item py-1"
                         >
                           {{ topic }}
                         </li>
                       </ul>
-                      <p v-else class="text-caption text-slate-300 mb-0">
+                      <p v-else class="text-caption syllabus-topic-item mb-0">
                         {{ typeof mod === 'string' ? mod : mod.title }}
                       </p>
                     </v-expansion-panel-text>
@@ -445,15 +448,14 @@ onMounted(() => {
                 @click="openRegisterModal(course)"
               >
                 <span>{{ t('courses.registerNow', 'Register Now') }}</span>
-                <v-icon icon="mdi-arrow-right" size="18" class="ml-1" />
+                <v-icon :icon="isRtl ? 'mdi-arrow-left' : 'mdi-arrow-right'" size="18" :class="isRtl ? 'mr-1' : 'ml-1'" />
               </v-btn>
 
               <v-btn
                 block
                 variant="text"
                 size="small"
-                color="grey-lighten-1"
-                class="text-caption font-weight-medium text-none"
+                class="inquire-btn text-caption font-weight-medium text-none"
                 prepend-icon="mdi-chat-question-outline"
                 @click="enrollInCourse(course)"
               >
@@ -469,12 +471,12 @@ onMounted(() => {
     <!-- STUDENT REGISTRATION APPLICATION MODAL     -->
     <!-- ========================================== -->
     <v-dialog v-model="isRegisterModalOpen" max-width="620" scrollable>
-      <v-card color="#0e1626" class="register-modal-card elevation-24">
+      <v-card :color="isDark ? '#0e1626' : '#ffffff'" class="register-modal-card elevation-24">
         <!-- Header -->
         <div class="register-modal-header pa-6 d-flex align-center justify-space-between border-b">
           <div class="d-flex align-center ga-3">
             <v-avatar color="#00366F" size="46" class="text-white">
-              <v-icon :icon="selectedCourse?.icon || 'mdi-school-outline'" color="#00c2ff" size="26" />
+              <v-icon :icon="selectedCourse?.icon || 'mdi-school-outline'" :color="isDark ? '#00c2ff' : '#38bdf8'" size="26" />
             </v-avatar>
             <div>
               <div class="text-caption font-weight-bold text-cyan-lighten-3 text-uppercase tracking-wider">
@@ -485,7 +487,7 @@ onMounted(() => {
               </h3>
             </div>
           </div>
-          <v-btn icon="mdi-close" variant="text" size="small" color="grey-lighten-1" @click="closeRegisterModal" />
+          <v-btn icon="mdi-close" variant="text" size="small" color="white" @click="closeRegisterModal" />
         </div>
 
         <!-- Content -->
@@ -495,13 +497,13 @@ onMounted(() => {
             <v-avatar color="rgba(16, 185, 129, 0.15)" size="72" class="mb-4 border-emerald">
               <v-icon icon="mdi-check-decagram" color="#10b981" size="44" />
             </v-avatar>
-            <h3 class="text-h5 font-weight-bold text-white mb-2">Application Submitted!</h3>
-            <p class="text-body-2 text-slate-300 max-w-md mx-auto mb-6 line-height-relaxed">
-              Thank you, <strong class="text-white">{{ registerForm.name }}</strong>! Your enrollment request for
-              <strong class="text-cyan-lighten-3">{{ selectedCourse?.title }}</strong> has been registered with status
+            <h3 class="text-h5 font-weight-bold modal-success-title mb-2">Application Submitted!</h3>
+            <p class="text-body-2 modal-success-body max-w-md mx-auto mb-6 line-height-relaxed">
+              Thank you, <strong :class="isDark ? 'text-white' : 'text-slate-900'">{{ registerForm.name }}</strong>! Your enrollment request for
+              <strong :class="isDark ? 'text-cyan-lighten-3' : 'text-primary'">{{ selectedCourse?.title }}</strong> has been registered with status
               <span class="text-amber-lighten-2 font-weight-bold">PENDING</span>.
               Our academic advisors in Sétif will review your application and contact you at
-              <strong class="text-white">{{ registerForm.phone }}</strong> shortly.
+              <strong :class="isDark ? 'text-white' : 'text-slate-900'">{{ registerForm.phone }}</strong> shortly.
             </p>
             <v-btn
               color="#00366F"
@@ -530,7 +532,7 @@ onMounted(() => {
 
             <!-- Course Selection -->
             <div class="mb-4">
-              <label class="text-caption font-weight-bold text-slate-300 mb-1 d-block">
+              <label class="text-caption font-weight-bold register-label mb-1 d-block">
                 Selected Training Track *
               </label>
               <v-select
@@ -540,8 +542,8 @@ onMounted(() => {
                 item-value="_id"
                 variant="outlined"
                 density="comfortable"
-                color="#00c2ff"
-                bg-color="#0B0F19"
+                :color="isDark ? '#00c2ff' : 'primary'"
+                :bg-color="isDark ? '#0B0F19' : '#f8fafc'"
                 hide-details
                 prepend-inner-icon="mdi-school"
                 @update:model-value="onCourseSelectionChange"
@@ -551,7 +553,7 @@ onMounted(() => {
             <v-row class="gy-3">
               <!-- Student Full Name -->
               <v-col cols="12" sm="6">
-                <label class="text-caption font-weight-bold text-slate-300 mb-1 d-block">
+                <label class="text-caption font-weight-bold register-label mb-1 d-block">
                   Full Name (Nom & Prénom) *
                 </label>
                 <v-text-field
@@ -559,8 +561,8 @@ onMounted(() => {
                   placeholder="e.g. Yassine Mansouri"
                   variant="outlined"
                   density="comfortable"
-                  color="#00c2ff"
-                  bg-color="#0B0F19"
+                  :color="isDark ? '#00c2ff' : 'primary'"
+                  :bg-color="isDark ? '#0B0F19' : '#f8fafc'"
                   hide-details
                   prepend-inner-icon="mdi-account-outline"
                   required
@@ -569,7 +571,7 @@ onMounted(() => {
 
               <!-- Phone Number -->
               <v-col cols="12" sm="6">
-                <label class="text-caption font-weight-bold text-slate-300 mb-1 d-block">
+                <label class="text-caption font-weight-bold register-label mb-1 d-block">
                   Phone Number (Téléphone) *
                 </label>
                 <v-text-field
@@ -577,8 +579,8 @@ onMounted(() => {
                   placeholder="e.g. 0552 56 96 54"
                   variant="outlined"
                   density="comfortable"
-                  color="#00c2ff"
-                  bg-color="#0B0F19"
+                  :color="isDark ? '#00c2ff' : 'primary'"
+                  :bg-color="isDark ? '#0B0F19' : '#f8fafc'"
                   hide-details
                   prepend-inner-icon="mdi-phone-outline"
                   required
@@ -587,7 +589,7 @@ onMounted(() => {
 
               <!-- Email Address -->
               <v-col cols="12">
-                <label class="text-caption font-weight-bold text-slate-300 mb-1 d-block">
+                <label class="text-caption font-weight-bold register-label mb-1 d-block">
                   Email Address (Email de contact) *
                 </label>
                 <v-text-field
@@ -596,8 +598,8 @@ onMounted(() => {
                   placeholder="e.g. student@example.com"
                   variant="outlined"
                   density="comfortable"
-                  color="#00c2ff"
-                  bg-color="#0B0F19"
+                  :color="isDark ? '#00c2ff' : 'primary'"
+                  :bg-color="isDark ? '#0B0F19' : '#f8fafc'"
                   hide-details
                   prepend-inner-icon="mdi-email-outline"
                   required
@@ -606,7 +608,7 @@ onMounted(() => {
 
               <!-- Optional Background / Goals -->
               <v-col cols="12">
-                <label class="text-caption font-weight-bold text-slate-300 mb-1 d-block">
+                <label class="text-caption font-weight-bold register-label mb-1 d-block">
                   Prior Experience or Specific Goals (Optional)
                 </label>
                 <v-textarea
@@ -615,15 +617,15 @@ onMounted(() => {
                   placeholder="Tell us about your background, programming interests, or scheduling availability..."
                   variant="outlined"
                   density="comfortable"
-                  color="#00c2ff"
-                  bg-color="#0B0F19"
+                  :color="isDark ? '#00c2ff' : 'primary'"
+                  :bg-color="isDark ? '#0B0F19' : '#f8fafc'"
                   hide-details
                 />
               </v-col>
             </v-row>
 
-            <div class="d-flex align-center justify-end ga-3 mt-6 pt-4 border-t">
-              <v-btn variant="text" color="grey-lighten-1" @click="closeRegisterModal">
+            <div class="d-flex align-center justify-end ga-3 mt-6 pt-4 border-t modal-footer-border">
+              <v-btn variant="text" :color="isDark ? 'grey-lighten-1' : 'grey-darken-2'" @click="closeRegisterModal">
                 Cancel
               </v-btn>
               <v-btn
@@ -646,13 +648,14 @@ onMounted(() => {
 <style scoped>
 /* ===================================================
    Next Challenge Courses Section
-   Deep Navy (#00366F) & Neon Cyan (#00c2ff) Aesthetic
+   Theme-Reactive Architecture: Dark & Light Adaptive
 =================================================== */
 
 .courses-section {
   background-color: #070a12;
   position: relative;
   overflow: hidden;
+  transition: background-color 0.3s ease;
 }
 
 .courses-section::before {
@@ -666,10 +669,30 @@ onMounted(() => {
   background: radial-gradient(circle, rgba(0, 54, 111, 0.25) 0%, rgba(0, 194, 255, 0.05) 50%, transparent 70%);
   pointer-events: none;
   filter: blur(60px);
+  transition: opacity 0.3s ease;
 }
 
+.v-theme--nextChallengeLight .courses-section {
+  background-color: #f8fafc;
+}
+
+.v-theme--nextChallengeLight .courses-section::before {
+  background: radial-gradient(circle, rgba(0, 54, 111, 0.08) 0%, rgba(0, 194, 255, 0.04) 50%, transparent 70%);
+}
+
+/* Section Headings */
+.course-section-heading {
+  color: #f8fafc;
+  transition: color 0.25s ease;
+}
+
+.v-theme--nextChallengeLight .course-section-heading {
+  color: #0f172a;
+}
+
+/* Course Cards */
 .course-card {
-  background: #0B0F19 !important; /* Tech Slate */
+  background: #0B0F19 !important;
   border: 1px solid rgba(0, 54, 111, 0.45) !important;
   border-radius: 16px !important;
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
@@ -683,10 +706,41 @@ onMounted(() => {
   box-shadow: 0 16px 36px rgba(0, 0, 0, 0.5), 0 0 24px rgba(0, 194, 255, 0.15) !important;
 }
 
+.v-theme--nextChallengeLight .course-card {
+  background: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+}
+
+.v-theme--nextChallengeLight .course-card:hover {
+  border-color: rgba(0, 54, 111, 0.35) !important;
+  box-shadow: 0 16px 36px -8px rgba(0, 54, 111, 0.14), 0 0 20px rgba(0, 194, 255, 0.08) !important;
+}
+
 .course-card-top {
   position: relative;
 }
 
+/* Course Title & Description */
+.course-card-title {
+  color: #f8fafc;
+  transition: color 0.25s ease;
+}
+
+.v-theme--nextChallengeLight .course-card-title {
+  color: #0f172a;
+}
+
+.course-card-desc {
+  color: #94a3b8;
+  transition: color 0.25s ease;
+}
+
+.v-theme--nextChallengeLight .course-card-desc {
+  color: #475569;
+}
+
+/* Course Icon Box */
 .course-icon-box {
   width: 52px;
   height: 52px;
@@ -697,8 +751,16 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   box-shadow: 0 0 16px rgba(0, 194, 255, 0.15);
+  transition: all 0.3s ease;
 }
 
+.v-theme--nextChallengeLight .course-icon-box {
+  background: linear-gradient(135deg, rgba(0, 54, 111, 0.08) 0%, rgba(0, 194, 255, 0.12) 100%);
+  border: 1px solid rgba(0, 194, 255, 0.4);
+  box-shadow: 0 4px 14px rgba(0, 194, 255, 0.12);
+}
+
+/* Tech Tag Pills */
 .tech-tag-pill {
   background: rgba(0, 54, 111, 0.35);
   color: #7dd3fc;
@@ -706,10 +768,33 @@ onMounted(() => {
   font-size: 0.72rem;
   font-weight: 500;
   letter-spacing: 0.01em;
+  transition: all 0.25s ease;
 }
 
+.v-theme--nextChallengeLight .tech-tag-pill {
+  background: rgba(0, 54, 111, 0.06);
+  color: #0369a1;
+  border: 1px solid rgba(0, 86, 179, 0.2);
+}
+
+/* Syllabus Section */
 .syllabus-container {
   border-color: rgba(0, 54, 111, 0.3) !important;
+  transition: border-color 0.25s ease;
+}
+
+.v-theme--nextChallengeLight .syllabus-container {
+  border-color: rgba(0, 54, 111, 0.1) !important;
+}
+
+.syllabus-header-title {
+  color: #67e8f9;
+  letter-spacing: 0.05em;
+  transition: color 0.25s ease;
+}
+
+.v-theme--nextChallengeLight .syllabus-header-title {
+  color: #0284c7;
 }
 
 .syllabus-panels {
@@ -720,6 +805,12 @@ onMounted(() => {
   background-color: #0e1626 !important;
   border: 1px solid rgba(0, 54, 111, 0.3) !important;
   border-radius: 8px !important;
+  transition: background-color 0.25s ease, border-color 0.25s ease;
+}
+
+.v-theme--nextChallengeLight :deep(.v-expansion-panel) {
+  background-color: #f8fafc !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
 }
 
 :deep(.v-expansion-panel-title) {
@@ -730,6 +821,19 @@ onMounted(() => {
   border-bottom: 1px solid rgba(0, 54, 111, 0.4) !important;
 }
 
+.v-theme--nextChallengeLight :deep(.v-expansion-panel-title--active) {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+.syllabus-panel-title {
+  color: #f1f5f9;
+  transition: color 0.25s ease;
+}
+
+.v-theme--nextChallengeLight .syllabus-panel-title {
+  color: #1e293b;
+}
+
 .level-badge {
   background: rgba(0, 194, 255, 0.15);
   color: #00c2ff;
@@ -737,17 +841,39 @@ onMounted(() => {
   font-size: 0.68rem;
   letter-spacing: 0.03em;
   white-space: nowrap;
+  transition: all 0.25s ease;
+}
+
+.v-theme--nextChallengeLight .level-badge {
+  background: rgba(2, 132, 199, 0.08);
+  color: #0284c7;
+  border: 1px solid rgba(2, 132, 199, 0.25);
 }
 
 .syllabus-topic-list {
   list-style-type: disc;
   color: #94a3b8;
+  transition: color 0.25s ease;
+}
+
+.v-theme--nextChallengeLight .syllabus-topic-list {
+  color: #475569;
 }
 
 .syllabus-topic-list li::marker {
   color: #00c2ff;
+  transition: color 0.25s ease;
 }
 
+.v-theme--nextChallengeLight .syllabus-topic-list li::marker {
+  color: #0284c7;
+}
+
+.syllabus-topic-item {
+  color: inherit;
+}
+
+/* Action Buttons */
 .enroll-btn {
   background: linear-gradient(135deg, #00366F 0%, #004d99 100%) !important;
   border: 1px solid rgba(0, 194, 255, 0.4) !important;
@@ -760,9 +886,63 @@ onMounted(() => {
   box-shadow: 0 6px 20px rgba(0, 194, 255, 0.3) !important;
 }
 
+.v-theme--nextChallengeLight .enroll-btn {
+  box-shadow: 0 4px 14px rgba(0, 54, 111, 0.2) !important;
+  border-color: rgba(0, 54, 111, 0.25) !important;
+}
+
+.inquire-btn {
+  color: #94a3b8 !important;
+  transition: color 0.2s ease !important;
+}
+
+.inquire-btn:hover {
+  color: #00c2ff !important;
+}
+
+.v-theme--nextChallengeLight .inquire-btn {
+  color: #475569 !important;
+}
+
+.v-theme--nextChallengeLight .inquire-btn:hover {
+  color: #00366F !important;
+}
+
+/* Category Filter Buttons */
 .filter-btn {
-  border-radius: 8px;
-  border-color: rgba(0, 54, 111, 0.5) !important;
+  border-radius: 8px !important;
+  transition: all 0.2s ease !important;
+}
+
+.filter-btn--active {
+  background: #00366F !important;
+  color: #ffffff !important;
+  border: 1px solid #00366F !important;
+  box-shadow: 0 2px 8px rgba(0, 54, 111, 0.25) !important;
+}
+
+.filter-btn--inactive {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  color: #cbd5e1 !important;
+}
+
+.filter-btn--inactive:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(0, 194, 255, 0.4) !important;
+  color: #ffffff !important;
+}
+
+.v-theme--nextChallengeLight .filter-btn--inactive {
+  background: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.12) !important;
+  color: #334155 !important;
+}
+
+.v-theme--nextChallengeLight .filter-btn--inactive:hover {
+  background: #f1f5f9 !important;
+  border-color: #00366F !important;
+  color: #00366F !important;
 }
 
 .ga-1-5 {
@@ -778,6 +958,16 @@ onMounted(() => {
   border-radius: 16px !important;
   color: #f1f5f9 !important;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), 0 0 30px rgba(0, 54, 111, 0.3) !important;
+  transition: background-color 0.25s ease, color 0.25s ease !important;
+}
+
+:global(.v-theme--nextChallengeLight .register-modal-card),
+:deep(.v-theme--nextChallengeLight .register-modal-card),
+.v-theme--nextChallengeLight .register-modal-card {
+  background: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  color: #0f172a !important;
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.15) !important;
 }
 
 :global(.register-modal-header),
@@ -785,6 +975,52 @@ onMounted(() => {
 .register-modal-header {
   background: linear-gradient(135deg, #00366F 0%, #061b36 100%) !important;
   border-bottom: 1px solid rgba(0, 86, 179, 0.3) !important;
+}
+
+:global(.v-theme--nextChallengeLight .register-modal-header),
+:deep(.v-theme--nextChallengeLight .register-modal-header),
+.v-theme--nextChallengeLight .register-modal-header {
+  background: linear-gradient(135deg, #00366F 0%, #004d99 100%) !important;
+  border-bottom: 1px solid rgba(0, 54, 111, 0.3) !important;
+}
+
+.register-label {
+  color: #cbd5e1;
+  transition: color 0.25s ease;
+}
+
+.v-theme--nextChallengeLight .register-label,
+:global(.v-theme--nextChallengeLight .register-label) {
+  color: #1e293b;
+}
+
+.modal-footer-border {
+  border-color: rgba(0, 54, 111, 0.3) !important;
+}
+
+.v-theme--nextChallengeLight .modal-footer-border,
+:global(.v-theme--nextChallengeLight .modal-footer-border) {
+  border-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+.modal-success-title {
+  color: #ffffff;
+  transition: color 0.25s ease;
+}
+
+.v-theme--nextChallengeLight .modal-success-title,
+:global(.v-theme--nextChallengeLight .modal-success-title) {
+  color: #0f172a;
+}
+
+.modal-success-body {
+  color: #cbd5e1;
+  transition: color 0.25s ease;
+}
+
+.v-theme--nextChallengeLight .modal-success-body,
+:global(.v-theme--nextChallengeLight .modal-success-body) {
+  color: #334155;
 }
 
 .border-emerald {

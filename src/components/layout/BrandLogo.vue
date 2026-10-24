@@ -30,7 +30,7 @@ const computedHeight = computed(() => {
 })
 
 const handleClick = (e) => {
-  if (props.to === '#home' && (window.location.pathname.startsWith('/products/') || window.location.pathname === '/admin')) {
+  if (props.to === '#home' && (window.location.pathname.startsWith('/products/') || window.location.pathname !== '/')) {
     e.preventDefault()
     window.dispatchEvent(new CustomEvent('nav-home'))
   }

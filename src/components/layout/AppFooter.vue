@@ -7,13 +7,6 @@ import { siteConfig } from '@/config/site.js'
 const { t, tm, locale } = useI18n()
 const isRtl = computed(() => locale.value === 'ar')
 
-const emit = defineEmits(['open-admin'])
-
-const openAdmin = () => {
-  emit('open-admin')
-  window.dispatchEvent(new CustomEvent('open-admin-portal'))
-}
-
 const scrollTo = (href) => {
   const target = document.querySelector(href)
   if (target) {
@@ -37,46 +30,20 @@ const scrollTo = (href) => {
 
           <!-- Social Links -->
           <div class="d-flex align-center ga-3 mb-6">
-            <!-- Facebook -->
             <v-btn
-              :href="siteConfig.social.facebook || '#contact'"
-              :target="siteConfig.social.facebook ? '_blank' : undefined"
-              :rel="siteConfig.social.facebook ? 'noopener noreferrer' : undefined"
+              v-for="item in siteConfig.socialLinks"
+              :key="item.platform"
+              :href="item.url"
+              target="_blank"
+              rel="noopener noreferrer"
               icon
               variant="tonal"
               density="comfortable"
-              color="primary"
-              aria-label="Next Challenge on Facebook"
+              class="social-btn"
+              :class="`social-btn--${item.platform}`"
+              :aria-label="t(item.ariaLabelKey)"
             >
-              <v-icon icon="mdi-facebook" size="20" />
-            </v-btn>
-
-            <!-- Instagram -->
-            <v-btn
-              :href="siteConfig.social.instagram || '#contact'"
-              :target="siteConfig.social.instagram ? '_blank' : undefined"
-              :rel="siteConfig.social.instagram ? 'noopener noreferrer' : undefined"
-              icon
-              variant="tonal"
-              density="comfortable"
-              color="primary"
-              aria-label="Next Challenge on Instagram"
-            >
-              <v-icon icon="mdi-instagram" size="20" />
-            </v-btn>
-
-            <!-- LinkedIn -->
-            <v-btn
-              :href="siteConfig.social.linkedin || '#contact'"
-              :target="siteConfig.social.linkedin ? '_blank' : undefined"
-              :rel="siteConfig.social.linkedin ? 'noopener noreferrer' : undefined"
-              icon
-              variant="tonal"
-              density="comfortable"
-              color="primary"
-              aria-label="Next Challenge on LinkedIn"
-            >
-              <v-icon icon="mdi-linkedin" size="20" />
+              <v-icon :icon="item.icon" size="20" />
             </v-btn>
           </div>
 
@@ -144,18 +111,13 @@ const scrollTo = (href) => {
       <!-- Bottom Copyright Row -->
       <div class="footer-bottom mt-12 pt-6 border-t d-flex flex-column flex-sm-row align-center justify-space-between ga-4">
         <div class="text-caption text-medium-emphasis text-center text-sm-left">
-          &copy; 2026 Next Challenge. {{ t('footer.allRightsReserved') }}
+          &copy; 2021 Next Challenge. {{ t('footer.allRightsReserved') }}
         </div>
         <div class="d-flex align-center flex-wrap ga-4 ga-md-6 text-caption text-medium-emphasis">
           <span class="mono-font ltr-text" dir="ltr">{{ siteConfig.legalName }}</span>
           <span>&bull;</span>
           <a :href="siteConfig.siteUrl" class="text-medium-emphasis text-decoration-none ltr-text" dir="ltr">
             nextchallenge.tech
-          </a>
-          <span>&bull;</span>
-          <a href="#admin" class="text-medium-emphasis text-decoration-none d-flex align-center ga-1 admin-portal-link" @click.prevent="openAdmin">
-            <v-icon icon="mdi-shield-lock-outline" size="14" color="secondary" />
-            <span>Admin Portal</span>
           </a>
         </div>
       </div>
@@ -232,5 +194,80 @@ const scrollTo = (href) => {
 
 .tracking-wider {
   letter-spacing: 0.05em;
+}
+
+.social-btn {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 50% !important;
+}
+
+.social-btn:focus-visible {
+  outline: 2px solid #38bdf8;
+  outline-offset: 3px;
+}
+
+.social-btn:hover {
+  transform: translateY(-2px);
+}
+
+/* LinkedIn: Official Platform Blue (#0A66C2) */
+.social-btn--linkedin {
+  color: #0A66C2 !important;
+  background: rgba(10, 102, 194, 0.12) !important;
+  border: 1px solid rgba(10, 102, 194, 0.35) !important;
+}
+.social-btn--linkedin:hover {
+  background: #0A66C2 !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(10, 102, 194, 0.45);
+}
+
+/* Facebook: Official Platform Blue (#1877F2) */
+.social-btn--facebook {
+  color: #1877F2 !important;
+  background: rgba(24, 119, 242, 0.12) !important;
+  border: 1px solid rgba(24, 119, 242, 0.35) !important;
+}
+.social-btn--facebook:hover {
+  background: #1877F2 !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(24, 119, 242, 0.45);
+}
+
+/* Instagram: Authentic Multicolor Brand Gradient Treatment */
+.social-btn--instagram {
+  color: #e4405f !important;
+  background: rgba(228, 64, 95, 0.12) !important;
+  border: 1px solid rgba(228, 64, 95, 0.35) !important;
+}
+.social-btn--instagram .v-icon {
+  background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline-block;
+}
+.social-btn--instagram:hover {
+  background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%) !important;
+  border-color: transparent !important;
+  box-shadow: 0 4px 14px rgba(228, 64, 95, 0.45);
+}
+.social-btn--instagram:hover .v-icon {
+  background: none;
+  -webkit-text-fill-color: #ffffff;
+  color: #ffffff !important;
+}
+
+/* Light Theme Enhancements */
+.v-theme--nextChallengeLight .social-btn--linkedin {
+  background: rgba(10, 102, 194, 0.08) !important;
+  border-color: rgba(10, 102, 194, 0.3) !important;
+}
+.v-theme--nextChallengeLight .social-btn--facebook {
+  background: rgba(24, 119, 242, 0.08) !important;
+  border-color: rgba(24, 119, 242, 0.3) !important;
+}
+.v-theme--nextChallengeLight .social-btn--instagram {
+  background: rgba(228, 64, 95, 0.08) !important;
+  border-color: rgba(228, 64, 95, 0.3) !important;
 }
 </style>

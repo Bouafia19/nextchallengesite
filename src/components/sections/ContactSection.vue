@@ -128,8 +128,8 @@ const resetSuccess = () => {
           {{ t('contact.subtitle') }}
         </p>
 
-        <!-- Direct WhatsApp Option -->
-        <div class="d-flex justify-center">
+        <!-- Direct WhatsApp Option & Compact Social Links -->
+        <div class="d-flex flex-column align-center justify-center ga-3">
           <v-btn
             :href="whatsappUrl"
             target="_blank"
@@ -143,6 +143,29 @@ const resetSuccess = () => {
           >
             {{ t('whatsapp.contactSectionCta') }}
           </v-btn>
+
+          <!-- Compact Social Media Channels Row -->
+          <div class="d-flex align-center flex-wrap justify-center ga-2 mt-2">
+            <span class="text-caption text-medium-emphasis font-weight-medium mr-1">
+              {{ t('social.followUs') }}
+            </span>
+            <v-btn
+              v-for="item in siteConfig.socialLinks"
+              :key="item.platform"
+              :href="item.url"
+              target="_blank"
+              rel="noopener noreferrer"
+              icon
+              variant="tonal"
+              density="comfortable"
+              size="small"
+              class="social-btn"
+              :class="`social-btn--${item.platform}`"
+              :aria-label="t(item.ariaLabelKey)"
+            >
+              <v-icon :icon="item.icon" size="18" />
+            </v-btn>
+          </div>
         </div>
       </div>
 
@@ -364,5 +387,80 @@ const resetSuccess = () => {
 
 .v-theme--nextChallengeLight .input-label {
   color: #1e293b;
+}
+
+.social-btn {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 50% !important;
+}
+
+.social-btn:focus-visible {
+  outline: 2px solid #38bdf8;
+  outline-offset: 3px;
+}
+
+.social-btn:hover {
+  transform: translateY(-2px);
+}
+
+/* LinkedIn: Official Platform Blue (#0A66C2) */
+.social-btn--linkedin {
+  color: #0A66C2 !important;
+  background: rgba(10, 102, 194, 0.12) !important;
+  border: 1px solid rgba(10, 102, 194, 0.35) !important;
+}
+.social-btn--linkedin:hover {
+  background: #0A66C2 !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(10, 102, 194, 0.45);
+}
+
+/* Facebook: Official Platform Blue (#1877F2) */
+.social-btn--facebook {
+  color: #1877F2 !important;
+  background: rgba(24, 119, 242, 0.12) !important;
+  border: 1px solid rgba(24, 119, 242, 0.35) !important;
+}
+.social-btn--facebook:hover {
+  background: #1877F2 !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(24, 119, 242, 0.45);
+}
+
+/* Instagram: Authentic Multicolor Brand Gradient Treatment */
+.social-btn--instagram {
+  color: #e4405f !important;
+  background: rgba(228, 64, 95, 0.12) !important;
+  border: 1px solid rgba(228, 64, 95, 0.35) !important;
+}
+.social-btn--instagram .v-icon {
+  background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline-block;
+}
+.social-btn--instagram:hover {
+  background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%) !important;
+  border-color: transparent !important;
+  box-shadow: 0 4px 14px rgba(228, 64, 95, 0.45);
+}
+.social-btn--instagram:hover .v-icon {
+  background: none;
+  -webkit-text-fill-color: #ffffff;
+  color: #ffffff !important;
+}
+
+/* Light Theme Enhancements */
+.v-theme--nextChallengeLight .social-btn--linkedin {
+  background: rgba(10, 102, 194, 0.08) !important;
+  border-color: rgba(10, 102, 194, 0.3) !important;
+}
+.v-theme--nextChallengeLight .social-btn--facebook {
+  background: rgba(24, 119, 242, 0.08) !important;
+  border-color: rgba(24, 119, 242, 0.3) !important;
+}
+.v-theme--nextChallengeLight .social-btn--instagram {
+  background: rgba(228, 64, 95, 0.08) !important;
+  border-color: rgba(228, 64, 95, 0.3) !important;
 }
 </style>

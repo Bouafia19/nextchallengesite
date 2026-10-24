@@ -1,4 +1,5 @@
 import dotenv from 'dotenv'
+import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -1182,6 +1183,33 @@ app.delete('/api/admin/enrollments/:id', requireAdminAuth, async (req, res) => {
 // Serve production static assets from dist
 const distPath = path.join(rootDir, 'dist')
 
+// Configurable Secret Admin Route Path (e.g. /administrator-b11905a0faa5adf0a8d6023bdb7b37da)
+// Configurable via ADMIN_ROUTE_PATH environment variable on Render
+const ADMIN_ROUTE_PATH = (process.env.ADMIN_ROUTE_PATH || '/administrator-b11905a0faa5adf0a8d6023bdb7b37da').trim()
+
+// Explicitly block legacy public /admin routes: Returns HTTP 404 without exposing admin SPA view
+app.all(['/admin', '/admin/*'], (req, res) => {
+  res.status(404).send('<!DOCTYPE html><html><head><title>404 Not Found</title></head><body><h1>404 Not Found</h1><p>The requested URL was not found on this server.</p></body></html>')
+})
+
+// Protected Server Gate for Administrator Portal
+// Injects <meta name="nc-admin-gate" content="active"> into index.html ONLY for requests matching ADMIN_ROUTE_PATH
+// The secret route is NEVER included in public frontend JavaScript bundles and complies with strict CSP.
+app.get([ADMIN_ROUTE_PATH, `${ADMIN_ROUTE_PATH}/`], (req, res) => {
+  const indexPath = path.join(distPath, 'index.html')
+  fs.readFile(indexPath, 'utf8', (err, html) => {
+    if (err) {
+      return res.status(200).send('Next Challenge Server running. Run `npm run build` to generate frontend.')
+    }
+    const injectedHtml = html.replace(
+      '</head>',
+      '<meta name="nc-admin-gate" content="active"></head>'
+    )
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private')
+    return res.status(200).send(injectedHtml)
+  })
+})
+
 // Cache control and MIME types: Hashed assets cached for 1 year, APK downloads forced as attachment, index.html not cached
 app.use(
   express.static(distPath, {
@@ -1212,4 +1240,5 @@ app.listen(PORT, () => {
   console.log(`[Next Challenge Server] Running on port ${PORT}`)
   console.log(`[Next Challenge Server] Target Domain: https://nextchallenge.tech`)
   console.log(`[Next Challenge Server] Database backend: MongoDB active`)
+  console.log(`[Next Challenge Server] Administrative portal: Configured (Protected route gate active)`)
 })
