@@ -101,9 +101,12 @@ function isRestrictedContext() {
 
 // In-memory cache of paths tracked in the current session
 const sessionTrackedPaths = new Set()
+const pendingTrackingPaths = new Set()
 
 /**
  * Tracks a public website visit or page view asynchronously.
+ * Resilient to Render Free Tier cold-starts: retries safely if the container
+ * is waking up from idle, guaranteeing the first visitor is never lost.
  */
 export function trackPageView(pagePath = '/') {
   if (isRestrictedContext()) {
@@ -111,13 +114,29 @@ export function trackPageView(pagePath = '/') {
   }
 
   const cleanPath = pagePath.startsWith('/') ? pagePath : `/${pagePath}`
+  const today = new Date().toISOString().slice(0, 10)
+  const sessionKey = `${today}:${cleanPath}`
 
-  // Prevent duplicate tracking within the same session for this exact path
-  const sessionKey = `${cleanPath}`
+  // Check in-memory session cache
   if (sessionTrackedPaths.has(sessionKey)) {
     return
   }
-  sessionTrackedPaths.add(sessionKey)
+
+  // Check sessionStorage to prevent duplicate tracking on page reload in same session
+  try {
+    if (typeof sessionStorage !== 'undefined' && sessionStorage.getItem(`nc_pv_${sessionKey}`)) {
+      sessionTrackedPaths.add(sessionKey)
+      return
+    }
+  } catch {
+    // Restricted environment / private mode
+  }
+
+  // Prevent multiple concurrent tracking requests for the same path
+  if (pendingTrackingPaths.has(sessionKey)) {
+    return
+  }
+  pendingTrackingPaths.add(sessionKey)
 
   try {
     const { vid, isNew } = getVisitorId()
@@ -136,25 +155,70 @@ export function trackPageView(pagePath = '/') {
 
     const targetUrl = '/api/analytics/track'
 
-    // Prefer navigator.sendBeacon for zero render interference
-    if (typeof navigator !== 'undefined' && typeof navigator.sendBeacon === 'function') {
-      const blob = new Blob([payload], { type: 'application/json' })
-      const dispatched = navigator.sendBeacon(targetUrl, blob)
-      if (dispatched) return
+    /**
+     * Dispatches tracking request with automatic backoff retry for Render cold starts.
+     * Retries up to 2 times (total 3 attempts) if the backend returns 502/503/504 or drops connection while spinning up.
+     */
+    const dispatchTracking = (attempt = 1) => {
+      // 35s timeout to give Render's container ample time to spin up
+      let timeoutId = null
+      let controller = null
+
+      if (typeof AbortController !== 'undefined') {
+        controller = new AbortController()
+        timeoutId = setTimeout(() => {
+          try { controller.abort() } catch {}
+        }, 35000)
+      }
+
+      fetch(targetUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: payload,
+        keepalive: true,
+        signal: controller ? controller.signal : undefined
+      })
+        .then((res) => {
+          if (timeoutId) clearTimeout(timeoutId)
+
+          if (res.ok) {
+            // Successfully recorded by backend
+            sessionTrackedPaths.add(sessionKey)
+            pendingTrackingPaths.delete(sessionKey)
+            try {
+              if (typeof sessionStorage !== 'undefined') {
+                sessionStorage.setItem(`nc_pv_${sessionKey}`, '1')
+              }
+            } catch {}
+            return
+          }
+
+          // If Render returned 502 Bad Gateway / 503 / 504 while waking up, retry
+          if ((res.status === 502 || res.status === 503 || res.status === 504 || res.status >= 500) && attempt < 3) {
+            const delay = attempt === 1 ? 5000 : 12000
+            setTimeout(() => dispatchTracking(attempt + 1), delay)
+          } else {
+            // Terminal response or max attempts reached
+            pendingTrackingPaths.delete(sessionKey)
+          }
+        })
+        .catch(() => {
+          if (timeoutId) clearTimeout(timeoutId)
+          // Network error or cold-start abort: retry if attempts remain
+          if (attempt < 3) {
+            const delay = attempt === 1 ? 5000 : 12000
+            setTimeout(() => dispatchTracking(attempt + 1), delay)
+          } else {
+            pendingTrackingPaths.delete(sessionKey)
+          }
+        })
     }
 
-    // Fallback to fetch with keepalive
-    fetch(targetUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: payload,
-      keepalive: true
-    }).catch(() => {
-      // Intentionally silent
-    })
+    // Fire non-blocking asynchronous tracking
+    dispatchTracking(1)
   } catch {
-    // Intentionally silent
+    pendingTrackingPaths.delete(sessionKey)
   }
 }

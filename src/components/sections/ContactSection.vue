@@ -9,6 +9,8 @@ const isRtl = computed(() => locale.value === 'ar')
 const formRef = ref(null)
 const isValid = ref(false)
 const isLoading = ref(false)
+const isSlowRequest = ref(false)
+let slowRequestTimer = null
 const isSuccess = ref(false)
 const errorMessage = ref('')
 
@@ -66,8 +68,22 @@ const handleSubmit = async () => {
   if (!valid) return
 
   isLoading.value = true
+  isSlowRequest.value = false
+
+  slowRequestTimer = setTimeout(() => {
+    isSlowRequest.value = true
+  }, 2500)
 
   try {
+    let controller = null
+    let abortTimer = null
+    if (typeof AbortController !== 'undefined') {
+      controller = new AbortController()
+      abortTimer = setTimeout(() => {
+        try { controller.abort() } catch {}
+      }, 45000)
+    }
+
     const response = await fetch(siteConfig.contactApiEndpoint, {
       method: 'POST',
       headers: {
@@ -81,12 +97,17 @@ const handleSubmit = async () => {
         company: formData.company.trim(),
         subject: formData.subject.trim(),
         message: formData.message.trim()
-      })
+      }),
+      signal: controller ? controller.signal : undefined
     })
 
+    if (abortTimer) clearTimeout(abortTimer)
     const data = await response.json().catch(() => ({}))
 
     if (!response.ok) {
+      if (response.status === 502 || response.status === 503 || response.status === 504) {
+        throw new Error('Our backend server is waking up from idle on Render free tier. Please click Retry Sending below.')
+      }
       throw new Error(data.message || t('contact.alerts.errorTitle'))
     }
 
@@ -100,8 +121,14 @@ const handleSubmit = async () => {
     formData.message = ''
     if (formRef.value) formRef.value.resetValidation()
   } catch (err) {
-    errorMessage.value = err.message || t('contact.alerts.errorTitle')
+    if (err.name === 'AbortError') {
+      errorMessage.value = 'Connection timed out while waiting for server startup on Render free tier. Please click Retry Sending.'
+    } else {
+      errorMessage.value = err.message || t('contact.alerts.errorTitle')
+    }
   } finally {
+    if (slowRequestTimer) clearTimeout(slowRequestTimer)
+    isSlowRequest.value = false
     isLoading.value = false
   }
 }
@@ -216,6 +243,18 @@ const resetSuccess = () => {
                 {{ t('contact.alerts.errorTitle') }}
               </div>
               <div class="text-body-2 mb-2">{{ errorMessage }}</div>
+              <div class="d-flex align-center ga-3 mb-2 flex-wrap">
+                <v-btn
+                  size="small"
+                  variant="flat"
+                  color="#00366F"
+                  class="text-white font-weight-bold text-capitalize"
+                  prepend-icon="mdi-refresh"
+                  @click="handleSubmit"
+                >
+                  Retry Sending
+                </v-btn>
+              </div>
               <div class="text-caption">
                 {{ t('contact.alerts.fallbackNotice') }}
                 <a :href="siteConfig.emailMailto" class="font-weight-bold text-white ltr-text" dir="ltr">
@@ -348,6 +387,18 @@ const resetSuccess = () => {
                   >
                     {{ isLoading ? t('contact.form.sending') : t('contact.form.sendBtn') }}
                   </v-btn>
+
+                  <!-- Branded Cold-Start Wakeup Strip -->
+                  <v-slide-y-transition>
+                    <div
+                      v-if="isSlowRequest"
+                      class="pa-3 mt-3 rounded d-flex align-center justify-center ga-2 text-caption text-center"
+                      style="background: rgba(0, 54, 111, 0.35); border: 1px solid rgba(0, 194, 255, 0.3); color: #bae6fd;"
+                    >
+                      <v-progress-circular indeterminate size="16" width="2" color="#00c2ff" />
+                      <span>Connecting to Next Challenge secure server... (waking up instance on Render free tier, thank you for your patience)</span>
+                    </div>
+                  </v-slide-y-transition>
                 </v-col>
 
                 <!-- Privacy & Confidentiality Notice -->

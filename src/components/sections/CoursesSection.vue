@@ -8,12 +8,7 @@ const theme = useTheme()
 const isDark = computed(() => theme.global.current.value.dark)
 const isRtl = computed(() => locale.value === 'ar')
 
-const courses = ref([])
-const isLoading = ref(true)
-const selectedFilter = ref('all')
-const expandedLevels = ref({}) // courseId -> level index
-
-// Fallback initial curriculum to ensure zero layout shift
+// Fallback initial curriculum to ensure zero layout shift and instant rendering
 const fallbackCourses = [
   {
     _id: 'c1',
@@ -140,22 +135,36 @@ const fallbackCourses = [
   }
 ]
 
+// Initialize immediately with fallbackCourses to decouple public rendering from backend cold starts
+const courses = ref([...fallbackCourses])
+const isLoading = ref(false)
+const selectedFilter = ref('all')
+const expandedLevels = ref({}) // courseId -> level index
+
 const fetchPublicCourses = async () => {
-  isLoading.value = true
   try {
-    const res = await fetch('/api/courses')
+    let controller = null
+    let timeoutId = null
+    if (typeof AbortController !== 'undefined') {
+      controller = new AbortController()
+      timeoutId = setTimeout(() => {
+        try { controller.abort() } catch {}
+      }, 8000)
+    }
+
+    const res = await fetch('/api/courses', {
+      signal: controller ? controller.signal : undefined
+    })
+
+    if (timeoutId) clearTimeout(timeoutId)
     if (res.ok) {
       const data = await res.json()
-      if (data.courses && data.courses.length > 0) {
+      if (data.courses && Array.isArray(data.courses) && data.courses.length > 0) {
         courses.value = data.courses
-        return
       }
     }
-    courses.value = fallbackCourses
   } catch {
-    courses.value = fallbackCourses
-  } finally {
-    isLoading.value = false
+    // Keep fallback courses intact without UI disruption
   }
 }
 
@@ -171,6 +180,8 @@ const filteredCourses = computed(() => {
 const isRegisterModalOpen = ref(false)
 const selectedCourse = ref(null)
 const isSubmitting = ref(false)
+const isSlowEnroll = ref(false)
+let slowEnrollTimer = null
 const registerError = ref('')
 const registrationSuccess = ref(false)
 const registerFormRef = ref(null)
@@ -223,24 +234,49 @@ const onCourseSelectionChange = (courseId) => {
 const submitRegistration = async () => {
   registerError.value = ''
   isSubmitting.value = true
+  isSlowEnroll.value = false
+
+  slowEnrollTimer = setTimeout(() => {
+    isSlowEnroll.value = true
+  }, 2500)
 
   try {
+    let controller = null
+    let abortTimer = null
+    if (typeof AbortController !== 'undefined') {
+      controller = new AbortController()
+      abortTimer = setTimeout(() => {
+        try { controller.abort() } catch {}
+      }, 45000)
+    }
+
     const res = await fetch('/api/enroll', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(registerForm.value)
+      body: JSON.stringify(registerForm.value),
+      signal: controller ? controller.signal : undefined
     })
 
+    if (abortTimer) clearTimeout(abortTimer)
     const data = await res.json().catch(() => ({}))
 
     if (!res.ok || !data.success) {
+      if (res.status === 502 || res.status === 503 || res.status === 504) {
+        throw new Error('Our backend server is waking up from idle on Render free tier. Please click Retry Application below.')
+      }
       throw new Error(data.message || 'Failed to submit registration application.')
     }
 
     registrationSuccess.value = true
   } catch (err) {
-    registerError.value = err.message || 'An unexpected error occurred. Please try again.'
+    if (err.name === 'AbortError') {
+      registerError.value = 'Request timed out waiting for server startup on Render free tier. Please click Retry Application.'
+    } else {
+      registerError.value = err.message || 'An unexpected error occurred. Please try again.'
+    }
   } finally {
+    if (slowEnrollTimer) clearTimeout(slowEnrollTimer)
+    isSlowEnroll.value = false
     isSubmitting.value = false
   }
 }
@@ -517,7 +553,7 @@ onMounted(() => {
 
           <!-- Registration Form -->
           <v-form v-else ref="registerFormRef" @submit.prevent="submitRegistration">
-            <!-- Error Alert -->
+            <!-- Error Alert with Branded Retry -->
             <v-alert
               v-if="registerError"
               type="error"
@@ -527,8 +563,25 @@ onMounted(() => {
               class="mb-4"
               @click:close="registerError = ''"
             >
-              {{ registerError }}
+              <div class="d-flex align-center justify-space-between flex-wrap ga-2">
+                <span>{{ registerError }}</span>
+                <v-btn size="small" variant="outlined" color="error" @click="submitRegistration">
+                  Retry Application
+                </v-btn>
+              </div>
             </v-alert>
+
+            <!-- Branded Cold-Start Wakeup Strip -->
+            <v-slide-y-transition>
+              <div
+                v-if="isSlowEnroll"
+                class="pa-3 mb-4 rounded d-flex align-center ga-2 text-caption"
+                :style="isDark ? 'background: rgba(0, 54, 111, 0.4); border: 1px solid rgba(0, 194, 255, 0.3); color: #bae6fd;' : 'background: #eff6ff; border: 1px solid #93c5fd; color: #1e3a8a;'"
+              >
+                <v-progress-circular indeterminate size="16" width="2" color="#00c2ff" />
+                <span>Connecting to Next Challenge server... (waking up instance on Render free tier, thank you for your patience)</span>
+              </div>
+            </v-slide-y-transition>
 
             <!-- Course Selection -->
             <div class="mb-4">

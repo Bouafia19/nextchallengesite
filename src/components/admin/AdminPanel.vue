@@ -28,6 +28,8 @@ const storedKey = (localStorage.getItem('nc_admin_key') || '').trim().replace(/^
 const apiKey = ref(storedKey)
 const isAuthenticated = ref(false)
 const isAuthenticating = ref(false)
+const isSlowAuth = ref(false)
+let slowAuthTimer = null
 const authError = ref('')
 const showApiKey = ref(false)
 const rememberKey = ref(true)
@@ -85,6 +87,8 @@ const isSavingEnrollmentNotes = ref(false)
 
 // Website Visitors Analytics State
 const isAnalyticsLoading = ref(false)
+const isSlowAnalytics = ref(false)
+let slowAnalyticsTimer = null
 const analyticsRange = ref('30d') // '7d' | '30d' | '90d'
 const analyticsData = ref(null)
 const analyticsError = ref('')
@@ -158,7 +162,7 @@ const getAuthHeaders = () => {
 }
 
 // Authenticate Admin Key
-const authenticate = async () => {
+const authenticate = async (isRetry = false) => {
   const cleanKey = apiKey.value.trim().replace(/^["']|["']$/g, '')
   if (!cleanKey) {
     authError.value = 'Please provide an Admin API Key.'
@@ -166,14 +170,33 @@ const authenticate = async () => {
   }
 
   isAuthenticating.value = true
-  authError.value = ''
+  if (!isRetry) {
+    authError.value = ''
+    isSlowAuth.value = false
+  }
+
+  if (slowAuthTimer) clearTimeout(slowAuthTimer)
+  slowAuthTimer = setTimeout(() => {
+    isSlowAuth.value = true
+  }, 2500)
 
   try {
+    let controller = null
+    let abortTimer = null
+    if (typeof AbortController !== 'undefined') {
+      controller = new AbortController()
+      abortTimer = setTimeout(() => {
+        try { controller.abort() } catch {}
+      }, 45000)
+    }
+
     const res = await fetch(getApiUrl('/verify'), {
       method: 'POST',
-      headers: getAuthHeaders()
+      headers: getAuthHeaders(),
+      signal: controller ? controller.signal : undefined
     })
 
+    if (abortTimer) clearTimeout(abortTimer)
     const data = await res.json().catch(() => ({}))
 
     if (!res.ok || !data.success) {
@@ -181,8 +204,13 @@ const authenticate = async () => {
         throw new Error(data.message || 'Invalid Admin API Key. Access denied.')
       } else if (res.status === 404) {
         throw new Error('Admin API endpoint not found. Please ensure backend server is running.')
-      } else if (res.status === 503) {
-        throw new Error(data.message || 'Database unavailable. MongoDB Atlas is connecting.')
+      } else if (res.status === 502 || res.status === 503 || res.status === 504) {
+        // Cold start in progress on Render free tier: inform admin and retry automatically
+        authError.value = 'Backend server is waking up from idle on Render free tier. Retrying automatically in a few seconds...'
+        setTimeout(() => {
+          if (!isAuthenticated.value) authenticate(true)
+        }, 4000)
+        return
       }
       throw new Error(data.message || 'Invalid Admin API Key. Access denied.')
     }
@@ -196,9 +224,15 @@ const authenticate = async () => {
     await Promise.all([fetchContacts(true), fetchAdminCourses(), fetchAdminEnrollments(), fetchAnalytics(false)])
     startPolling()
   } catch (err) {
-    authError.value = err.message || 'Invalid Admin API Key. Access denied.'
+    if (err.name === 'AbortError') {
+      authError.value = 'Backend startup timed out on Render free tier. Please click Unlock Admin Portal again to retry.'
+    } else {
+      authError.value = err.message || 'Invalid Admin API Key. Access denied.'
+    }
     isAuthenticated.value = false
   } finally {
+    if (slowAuthTimer) clearTimeout(slowAuthTimer)
+    isSlowAuth.value = false
     isAuthenticating.value = false
   }
 }
@@ -294,14 +328,45 @@ const fetchAnalytics = async (isManual = false) => {
   }
 
   analyticsError.value = ''
+  isSlowAnalytics.value = false
+
+  if (slowAnalyticsTimer) clearTimeout(slowAnalyticsTimer)
+  slowAnalyticsTimer = setTimeout(() => {
+    isSlowAnalytics.value = true
+  }, 2500)
 
   try {
+    let controller = null
+    let abortTimer = null
+    if (typeof AbortController !== 'undefined') {
+      controller = new AbortController()
+      abortTimer = setTimeout(() => {
+        try { controller.abort() } catch {}
+      }, 45000)
+    }
+
     const url = getApiUrl(`/analytics/visitors?range=${analyticsRange.value}`)
-    const res = await fetch(url, { headers: getAuthHeaders() })
+    const res = await fetch(url, {
+      headers: getAuthHeaders(),
+      signal: controller ? controller.signal : undefined
+    })
+
+    if (abortTimer) clearTimeout(abortTimer)
 
     if (res.status === 401) {
       logout()
       authError.value = 'Session expired or invalid key. Please log in again.'
+      return
+    }
+
+    if (res.status === 502 || res.status === 503 || res.status === 504) {
+      // Backend is waking up on Render free tier: inform admin and retry automatically
+      analyticsError.value = 'Analytics backend is waking up from idle on Render free tier. Automatically retrying...'
+      setTimeout(() => {
+        if (isAuthenticated.value && (currentAdminTab.value === 'analytics' || !analyticsData.value)) {
+          fetchAnalytics(true)
+        }
+      }, 4000)
       return
     }
 
@@ -313,8 +378,14 @@ const fetchAnalytics = async (isManual = false) => {
     const data = await res.json()
     analyticsData.value = data
   } catch (err) {
-    analyticsError.value = err.message || 'Error communicating with analytics service.'
+    if (err.name === 'AbortError') {
+      analyticsError.value = 'Request timed out waiting for server startup on Render free tier. Click Retry to reconnect.'
+    } else {
+      analyticsError.value = err.message || 'Error communicating with analytics service.'
+    }
   } finally {
+    if (slowAnalyticsTimer) clearTimeout(slowAnalyticsTimer)
+    isSlowAnalytics.value = false
     isAnalyticsLoading.value = false
   }
 }
@@ -1026,6 +1097,18 @@ onUnmounted(() => {
             >
               Unlock Admin Portal
             </v-btn>
+
+            <!-- Branded Cold-Start Wakeup Strip -->
+            <v-slide-y-transition>
+              <div
+                v-if="isSlowAuth"
+                class="pa-3 mb-4 rounded d-flex align-center justify-center ga-2 text-caption text-center"
+                style="background: rgba(0, 54, 111, 0.4); border: 1px solid rgba(0, 194, 255, 0.3); color: #bae6fd;"
+              >
+                <v-progress-circular indeterminate size="16" width="2" color="#00c2ff" />
+                <span>Next Challenge backend is waking up from idle on Render free tier... (this may take up to 45s on cold start)</span>
+              </div>
+            </v-slide-y-transition>
 
             <v-btn
               block
@@ -2456,12 +2539,19 @@ onUnmounted(() => {
             </div>
           </v-alert>
 
-          <!-- Initial Loading State -->
+          <!-- Initial Loading State with Cold Start Awareness -->
           <div v-if="isAnalyticsLoading && !analyticsData" class="text-center py-12">
             <v-progress-circular indeterminate color="#00c2ff" size="48" class="mb-4" />
-            <div class="text-h6 text-white font-weight-medium">Collecting visitor data...</div>
-            <div class="text-body-2 text-grey-lighten-1 mt-1">
-              Synchronizing real-time analytics from MongoDB Atlas backend
+            <div class="text-h6 text-white font-weight-medium">
+              {{ isSlowAnalytics ? 'Connecting to Telemetry Engine...' : 'Collecting visitor data...' }}
+            </div>
+            <div class="text-body-2 text-grey-lighten-1 mt-1 max-w-md mx-auto">
+              <span v-if="isSlowAnalytics">
+                Next Challenge telemetry backend is waking up from idle on Render free tier. Statistics will render automatically once initialized.
+              </span>
+              <span v-else>
+                Synchronizing real-time analytics from MongoDB Atlas backend
+              </span>
             </div>
           </div>
 
