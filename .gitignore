@@ -13,3 +13,6 @@ pnpm-debug.log*
 MONGODB_ATLAS_ACCOUNT_AUDIT.md
 NEXTCHALLENGE_MONGODB_SETUP_REPORT.md
 ADMIN_ACCESS_LOCAL.md
+
+# Local Netlify folder
+.netlify
