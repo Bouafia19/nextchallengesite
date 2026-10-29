@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTheme } from 'vuetify'
+import { buildApiUrl } from '../../utils/api.js'
 
 const { t, locale } = useI18n()
 const theme = useTheme()
@@ -152,7 +153,7 @@ const fetchPublicCourses = async () => {
       }, 8000)
     }
 
-    const res = await fetch('/api/courses', {
+    const res = await fetch(buildApiUrl('/api/courses'), {
       signal: controller ? controller.signal : undefined
     })
 
@@ -250,7 +251,7 @@ const submitRegistration = async () => {
       }, 45000)
     }
 
-    const res = await fetch('/api/enroll', {
+    const res = await fetch(buildApiUrl('/api/enroll'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(registerForm.value),

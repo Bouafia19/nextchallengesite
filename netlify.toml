@@ -1,0 +1,51 @@
+# ==============================================================================
+# Next Challenge — Netlify Production & Preview Configuration
+# ==============================================================================
+
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# 1. API Proxy: Forward all API calls to the Render production backend
+[[redirects]]
+  from = "/api/*"
+  to = "https://nextchallenge-tech.onrender.com/api/:splat"
+  status = 200
+  force = true
+
+# 2. SPA Fallback: Route all public pages through Vue client-side router
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# 3. Security Headers and Content Delivery Optimization
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "SAMEORIGIN"
+    X-Content-Type-Options = "nosniff"
+    X-XSS-Protection = "1; mode=block"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+    Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https://nextchallenge.tech https://nextchallenge-tech.onrender.com https://*.netlify.app; connect-src 'self' https://nextchallenge.tech https://nextchallenge-tech.onrender.com https://*.netlify.app; frame-ancestors 'self'; base-uri 'self'; form-action 'self'; object-src 'none';"
+
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*.apk"
+  [headers.values]
+    Content-Type = "application/vnd.android.package-archive"
+    Content-Disposition = "attachment"
+    Cache-Control = "public, max-age=86400"
+
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"

@@ -2,6 +2,7 @@
  * Next Challenge — Central Website Configuration
  * Production Domain: https://nextchallenge.tech
  */
+import { buildApiUrl } from '../utils/api.js'
 
 export const siteConfig = {
   name: 'Next Challenge',
@@ -24,7 +25,7 @@ export const siteConfig = {
   emailMailto: 'mailto:nextchallenge2021@gmail.com',
 
   // API base for contact form submissions
-  contactApiEndpoint: import.meta.env.VITE_CONTACT_API_URL || '/api/contact',
+  contactApiEndpoint: import.meta.env.VITE_CONTACT_API_URL || buildApiUrl('/api/contact'),
 
   // Official Social Media Profiles
   social: {

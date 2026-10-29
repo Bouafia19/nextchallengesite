@@ -6,10 +6,14 @@ import VisitorTrendChart from './VisitorTrendChart.vue'
 const emit = defineEmits(['back'])
 
 // API Base configuration - supports relative or absolute URLs
+const defaultBase = import.meta.env.VITE_API_BASE_URL
+  ? `${import.meta.env.VITE_API_BASE_URL.trim().replace(/\/$/, '')}/api/admin`
+  : '/api/admin'
+
 const rawApiUrl =
   import.meta.env.VITE_ADMIN_API_URL ||
   import.meta.env.VITE_CONTACT_API_URL?.replace(/\/contact\/?$/, '/admin') ||
-  '/api/admin'
+  defaultBase
 
 const apiBase = rawApiUrl.replace(/\/contacts\/?$/, '').replace(/\/$/, '')
 

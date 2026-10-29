@@ -52,7 +52,8 @@ watch(locale, () => {
 const isAdminGateActive = () => {
   return (
     document.querySelector('meta[name="nc-admin-gate"]')?.content === 'active' ||
-    window.__NC_ADMIN_GATE__ === true
+    window.__NC_ADMIN_GATE__ === true ||
+    (typeof window !== 'undefined' && window.location.pathname.startsWith('/administrator-') && window.location.pathname.length > 25)
   )
 }
 

@@ -52,8 +52,8 @@ app.use((req, res, next) => {
     "script-src 'self'",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com data:",
-    "img-src 'self' data: blob: https://nextchallenge.tech https://*.onrender.com",
-    "connect-src 'self' https://nextchallenge.tech https://nextchallenge-tech.onrender.com",
+    "img-src 'self' data: blob: https://nextchallenge.tech https://*.onrender.com https://*.netlify.app",
+    "connect-src 'self' https://nextchallenge.tech https://nextchallenge-tech.onrender.com https://*.netlify.app",
     "frame-ancestors 'self'",
     "base-uri 'self'",
     "form-action 'self'",
@@ -115,10 +115,11 @@ const corsOptions = {
       return callback(null, true)
     }
 
-    // Match exact allowed origins or subdomains of nextchallenge.tech
+    // Match exact allowed origins, subdomains of nextchallenge.tech, or Netlify staging/preview domains
     if (
       allowedOrigins.includes(origin) ||
-      /^https:\/\/([a-zA-Z0-9-]+\.)?nextchallenge\.tech$/.test(origin)
+      /^https:\/\/([a-zA-Z0-9-]+\.)?nextchallenge\.tech$/.test(origin) ||
+      /^https:\/\/([a-zA-Z0-9-]+\.)?netlify\.app$/.test(origin)
     ) {
       return callback(null, true)
     }

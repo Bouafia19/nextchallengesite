@@ -8,6 +8,7 @@
  * - Automatic deduplication: SPA route switches, re-renders, and rapid reloads do NOT inflate metrics.
  * - Strictly excludes administrative portals, web crawlers, and automated testing harnesses.
  */
+import { buildApiUrl } from './api.js'
 
 function generateUuid() {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
@@ -153,7 +154,7 @@ export function trackPageView(pagePath = '/') {
       isClientNew: isNew
     })
 
-    const targetUrl = '/api/analytics/track'
+    const targetUrl = buildApiUrl('/api/analytics/track')
 
     /**
      * Dispatches tracking request with automatic backoff retry for Render cold starts.
