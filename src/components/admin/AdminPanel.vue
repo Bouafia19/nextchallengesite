@@ -534,6 +534,12 @@ const formatRelativeTime = (dateStr) => {
   return date.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
+const formatDate = (dateStr) => {
+  if (!dateStr) return ''
+  const date = new Date(dateStr)
+  return date.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
 const formatDateFull = (dateStr) => {
   if (!dateStr) return ''
   const date = new Date(dateStr)
