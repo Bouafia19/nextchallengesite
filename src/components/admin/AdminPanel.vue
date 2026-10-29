@@ -920,8 +920,31 @@ watch([enrollmentFilter, enrollmentSearchQuery], () => {
 
 // Sorter or initial mount
 onMounted(() => {
+  const hash = window.location.hash.toLowerCase()
+  if (hash === '#analytics' || hash === '#visitors') {
+    currentAdminTab.value = 'analytics'
+  } else if (hash === '#courses') {
+    currentAdminTab.value = 'courses'
+  } else if (hash === '#enrollments') {
+    currentAdminTab.value = 'enrollments'
+  }
+
   if (apiKey.value) {
     authenticate()
+  }
+})
+
+watch(currentAdminTab, (tab) => {
+  if (tab === 'analytics') {
+    window.location.hash = '#visitors'
+  } else if (tab === 'courses') {
+    window.location.hash = '#courses'
+  } else if (tab === 'enrollments') {
+    window.location.hash = '#enrollments'
+  } else {
+    if (window.location.hash) {
+      window.location.hash = ''
+    }
   }
 })
 
@@ -1227,6 +1250,42 @@ onUnmounted(() => {
         <!-- TAB 1: SUBMISSIONS & INQUIRIES                 -->
         <!-- ============================================== -->
         <template v-if="currentAdminTab === 'submissions'">
+        <!-- Quick Website Visitors Telemetry Strip -->
+        <v-card
+          class="pa-3 mb-6 analytics-banner-strip cursor-pointer elevation-4"
+          @click="currentAdminTab = 'analytics'; fetchAnalytics(true)"
+        >
+          <div class="d-flex align-center justify-space-between flex-wrap ga-3">
+            <div class="d-flex align-center ga-3">
+              <div class="kpi-mini-icon bg-navy pa-2 rounded-lg d-flex align-center justify-center">
+                <v-icon icon="mdi-chart-line" color="#00c2ff" size="22" />
+              </div>
+              <div>
+                <div class="d-flex align-center ga-2">
+                  <span class="text-subtitle-2 font-weight-bold text-white">Website Visitors</span>
+                  <v-chip size="x-small" color="#10b981" variant="flat" class="font-weight-bold text-slate-900">
+                    Live Telemetry
+                  </v-chip>
+                </div>
+                <div class="text-caption text-grey-lighten-1 mt-0-5">
+                  <strong class="text-cyan">{{ analyticsData?.summary?.todayVisitors || 0 }}</strong> visitors today ·
+                  <strong class="text-sky">{{ analyticsData?.summary?.last7DaysVisitors || 0 }}</strong> last 7 days ·
+                  <strong class="text-white">{{ analyticsData?.summary?.totalVisitors || 0 }}</strong> total since Oct 29, 2026
+                </div>
+              </div>
+            </div>
+            <v-btn
+              size="small"
+              variant="tonal"
+              color="#00c2ff"
+              append-icon="mdi-arrow-right"
+              class="font-weight-bold text-capitalize"
+            >
+              Open Visitor Analytics
+            </v-btn>
+          </div>
+        </v-card>
+
         <!-- KPI Summary Metric Cards -->
         <v-row class="mb-6 gy-4">
           <!-- Total Inquiries -->
@@ -3787,6 +3846,22 @@ onUnmounted(() => {
 }
 
 /* Website Visitors & Analytics Styles */
+.analytics-banner-strip {
+  background: linear-gradient(135deg, rgba(0, 54, 111, 0.5) 0%, rgba(11, 15, 25, 0.9) 100%) !important;
+  border: 1px solid rgba(0, 194, 255, 0.35) !important;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+
+.analytics-banner-strip:hover {
+  border-color: rgba(0, 194, 255, 0.7) !important;
+  box-shadow: 0 4px 20px rgba(0, 54, 111, 0.4) !important;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
 .analytics-header-card {
   background: linear-gradient(135deg, rgba(0, 54, 111, 0.45) 0%, #0B0F19 100%) !important;
   border: 1px solid rgba(0, 194, 255, 0.3) !important;
