@@ -17,6 +17,7 @@ const AdminPanel = defineAsyncComponent(() => import('./components/admin/AdminPa
 const ProductDetailView = defineAsyncComponent(() => import('./components/products/ProductDetailView.vue'))
 import { siteConfig } from './config/site.js'
 import { messages } from './plugins/i18n.js'
+import { trackPageView } from './utils/analytics.js'
 
 const { t, locale } = useI18n()
 const showBackToTop = ref(false)
@@ -117,6 +118,7 @@ const showSite = () => {
     window.location.hash = ''
   }
   document.title = defaultTitle.value
+  trackPageView('/')
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
@@ -135,6 +137,7 @@ const openProductDetail = (slug) => {
   if (matched) {
     document.title = `${matched.name} — ${matched.category} | Next Challenge`
   }
+  trackPageView(`/products/${finalSlug}`)
 }
 
 const showProductsSection = () => {
@@ -142,6 +145,7 @@ const showProductsSection = () => {
   selectedProductSlug.value = ''
   window.history.pushState(null, '', '/#products')
   document.title = defaultTitle.value
+  trackPageView('/#products')
   setTimeout(() => {
     const el = document.getElementById('products')
     if (el) {
@@ -185,6 +189,11 @@ const scrollToTop = () => {
 
 onMounted(() => {
   checkRoute()
+  if (currentView.value === 'site') {
+    trackPageView('/')
+  } else if (currentView.value === 'product-detail' && selectedProductSlug.value) {
+    trackPageView(`/products/${selectedProductSlug.value}`)
+  }
   window.addEventListener('hashchange', checkRoute)
   window.addEventListener('popstate', checkRoute)
   window.addEventListener('nav-home', handleNavHome)

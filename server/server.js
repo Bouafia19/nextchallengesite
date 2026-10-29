@@ -23,6 +23,7 @@ import Course from './models/Course.js'
 import Enrollment from './models/Enrollment.js'
 import { requireAdminAuth } from './middleware/auth.js'
 import { sendContactNotification } from './mailer.js'
+import { recordVisit, getVisitorAnalytics } from './analytics.js'
 
 const app = express()
 const PORT = process.env.PORT || 5000
@@ -247,6 +248,42 @@ function adminRateLimiter(req, res, next) {
   next()
 }
 
+// In-Memory Analytics Rate Limiter (60 requests per 1 minute per IP to prevent beacon flooding)
+const analyticsRateLimitMap = new Map()
+const ANALYTICS_RATE_LIMIT_WINDOW_MS = 60 * 1000 // 1 minute
+const MAX_ANALYTICS_REQUESTS_PER_WINDOW = 60
+
+function analyticsRateLimiter(req, res, next) {
+  const ip = getClientIp(req)
+  const now = Date.now()
+
+  let record = analyticsRateLimitMap.get(ip)
+  if (!record || now - record.startTime > ANALYTICS_RATE_LIMIT_WINDOW_MS) {
+    record = { startTime: now, count: 1 }
+    analyticsRateLimitMap.set(ip, record)
+  } else {
+    record.count += 1
+  }
+
+  // Periodic cleanup
+  if (analyticsRateLimitMap.size > 2000) {
+    for (const [key, value] of analyticsRateLimitMap.entries()) {
+      if (now - value.startTime > ANALYTICS_RATE_LIMIT_WINDOW_MS) {
+        analyticsRateLimitMap.delete(key)
+      }
+    }
+  }
+
+  if (record.count > MAX_ANALYTICS_REQUESTS_PER_WINDOW) {
+    return res.status(429).json({
+      success: false,
+      message: 'Too many analytics events received.'
+    })
+  }
+
+  next()
+}
+
 // Apply admin rate limiting to all /api/admin routes
 app.use('/api/admin', adminRateLimiter)
 
@@ -289,6 +326,37 @@ app.get('/health', (req, res) => {
  * Public API Routes
  * -------------------------------------------------------------
  */
+
+// POST /api/analytics/track - Privacy-preserving public visitor tracking beacon
+app.post('/api/analytics/track', analyticsRateLimiter, async (req, res) => {
+  try {
+    if (!isDbConnected()) {
+      return res.status(200).json({ success: false, reason: 'database_unavailable' })
+    }
+
+    const { visitorId, sessionId, path: reqPath, device, browser, isClientNew } = req.body || {}
+    const userAgent = req.headers['user-agent'] || ''
+
+    if (!visitorId || !sessionId) {
+      return res.status(400).json({ success: false, message: 'visitorId and sessionId are required' })
+    }
+
+    const result = await recordVisit({
+      visitorId,
+      sessionId,
+      path: reqPath,
+      device,
+      browser,
+      userAgent,
+      isClientNew: Boolean(isClientNew)
+    })
+
+    return res.status(200).json({ success: true, ...result })
+  } catch (err) {
+    console.warn('[Analytics Track Error]', err.message || err)
+    return res.status(200).json({ success: false })
+  }
+})
 
 // POST /api/contact - Saves inquiry submissions directly to MongoDB
 app.post('/api/contact', rateLimiter, async (req, res) => {
@@ -1176,6 +1244,32 @@ app.delete('/api/admin/enrollments/:id', requireAdminAuth, async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'Failed to delete enrollment application.'
+    })
+  }
+})
+
+// GET /api/admin/analytics/visitors - Aggregated website visitor analytics for Next Challenge admin dashboard
+app.get('/api/admin/analytics/visitors', requireAdminAuth, async (req, res) => {
+  try {
+    if (!isDbConnected()) {
+      return res.status(503).json({
+        success: false,
+        message: 'Database temporarily unavailable.'
+      })
+    }
+
+    const rangeParam = String(req.query.range || req.query.days || '30d').toLowerCase()
+    const validRanges = ['7d', '30d', '90d', '7', '30', '90']
+    const range = validRanges.includes(rangeParam) ? rangeParam : '30d'
+
+    const analyticsData = await getVisitorAnalytics(range)
+
+    return res.status(200).json(analyticsData)
+  } catch (err) {
+    console.error('[Admin Analytics Error]', err.message || err)
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve visitor analytics.'
     })
   }
 })

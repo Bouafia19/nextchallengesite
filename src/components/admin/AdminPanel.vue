@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import BrandLogo from '../layout/BrandLogo.vue'
+import VisitorTrendChart from './VisitorTrendChart.vue'
 
 const emit = defineEmits(['back'])
 
@@ -81,6 +82,12 @@ const isDeletingEnrollment = ref(false)
 const isUpdatingEnrollmentStatus = ref(false)
 const enrollmentAdminNotesInput = ref('')
 const isSavingEnrollmentNotes = ref(false)
+
+// Website Visitors Analytics State
+const isAnalyticsLoading = ref(false)
+const analyticsRange = ref('30d') // '7d' | '30d' | '90d'
+const analyticsData = ref(null)
+const analyticsError = ref('')
 
 // Dashboard Data State
 const contacts = ref([])
@@ -185,8 +192,8 @@ const authenticate = async () => {
       localStorage.setItem('nc_admin_key', cleanKey)
     }
 
-    // Fetch initial contacts, courses, enrollments, and start polling
-    await Promise.all([fetchContacts(true), fetchAdminCourses(), fetchAdminEnrollments()])
+    // Fetch initial contacts, courses, enrollments, analytics, and start polling
+    await Promise.all([fetchContacts(true), fetchAdminCourses(), fetchAdminEnrollments(), fetchAnalytics(false)])
     startPolling()
   } catch (err) {
     authError.value = err.message || 'Invalid Admin API Key. Access denied.'
@@ -278,6 +285,46 @@ const fetchContacts = async (isManual = false) => {
   }
 }
 
+// Fetch Website Visitors Analytics from backend
+const fetchAnalytics = async (isManual = false) => {
+  if (!isAuthenticated.value) return
+
+  if (isManual) {
+    isAnalyticsLoading.value = true
+  }
+
+  analyticsError.value = ''
+
+  try {
+    const url = getApiUrl(`/analytics/visitors?range=${analyticsRange.value}`)
+    const res = await fetch(url, { headers: getAuthHeaders() })
+
+    if (res.status === 401) {
+      logout()
+      authError.value = 'Session expired or invalid key. Please log in again.'
+      return
+    }
+
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}))
+      throw new Error(errData.message || 'Failed to retrieve visitor analytics.')
+    }
+
+    const data = await res.json()
+    analyticsData.value = data
+  } catch (err) {
+    analyticsError.value = err.message || 'Error communicating with analytics service.'
+  } finally {
+    isAnalyticsLoading.value = false
+  }
+}
+
+watch(analyticsRange, () => {
+  if (isAuthenticated.value) {
+    fetchAnalytics(true)
+  }
+})
+
 // Polling System
 const startPolling = () => {
   stopPolling()
@@ -298,6 +345,8 @@ const startPolling = () => {
       fetchAdminCourses()
     } else if (currentAdminTab.value === 'enrollments') {
       fetchAdminEnrollments()
+    } else if (currentAdminTab.value === 'analytics') {
+      fetchAnalytics(false)
     }
   }, pollingIntervalSeconds.value * 1000)
 }
@@ -1141,6 +1190,35 @@ onUnmounted(() => {
               class="font-weight-bold ml-2"
             >
               {{ enrollmentsStats.total }}
+            </v-chip>
+          </v-btn>
+
+          <v-btn
+            :variant="currentAdminTab === 'analytics' ? 'flat' : 'outlined'"
+            :color="currentAdminTab === 'analytics' ? '#00366F' : 'grey-lighten-1'"
+            size="large"
+            class="font-weight-bold px-5 module-tab-btn"
+            prepend-icon="mdi-chart-timeline-variant"
+            @click="currentAdminTab = 'analytics'; fetchAnalytics(true)"
+          >
+            <span>Website Visitors</span>
+            <v-chip
+              v-if="analyticsData?.summary?.todayVisitors !== undefined"
+              size="x-small"
+              color="#00c2ff"
+              variant="flat"
+              class="text-slate-900 font-weight-bold ml-2"
+            >
+              {{ analyticsData?.summary?.todayVisitors }} today
+            </v-chip>
+            <v-chip
+              v-else
+              size="x-small"
+              color="grey-lighten-1"
+              variant="tonal"
+              class="font-weight-bold ml-2"
+            >
+              Live
             </v-chip>
           </v-btn>
         </div>
@@ -2217,6 +2295,489 @@ onUnmounted(() => {
             </div>
           </v-card>
         </template>
+
+        <!-- ============================================== -->
+        <!-- TAB 4: WEBSITE VISITORS & ANALYTICS            -->
+        <!-- ============================================== -->
+        <template v-else-if="currentAdminTab === 'analytics'">
+          <!-- Analytics Section Header & Period Switcher -->
+          <v-card class="pa-4 pa-md-5 mb-6 analytics-header-card">
+            <div class="d-flex align-center justify-space-between flex-wrap ga-4">
+              <div>
+                <div class="d-flex align-center flex-wrap ga-2 mb-1">
+                  <h2 class="text-h5 font-weight-bold text-white mb-0 d-flex align-center ga-2">
+                    <v-icon icon="mdi-chart-line" color="#00c2ff" size="28" />
+                    <span>Website Visitors & Traffic Analytics</span>
+                  </h2>
+                  <v-chip
+                    size="small"
+                    color="#10b981"
+                    variant="flat"
+                    class="font-weight-bold text-slate-900 ml-md-2"
+                  >
+                    <v-icon icon="mdi-shield-check" size="14" class="mr-1" />
+                    First-Party Active
+                  </v-chip>
+                </div>
+                <div class="text-body-2 text-grey-lighten-1">
+                  Real-time anonymous visitor telemetry from <strong class="text-cyan-lighten-3">nextchallenge.tech</strong>.
+                  Zero third-party tracking scripts, zero raw IP retention, and privacy-first session deduplication.
+                </div>
+              </div>
+
+              <!-- Controls: Period Selector & Manual Refresh -->
+              <div class="d-flex align-center flex-wrap ga-2">
+                <v-btn-toggle
+                  v-model="analyticsRange"
+                  mandatory
+                  density="compact"
+                  color="#00c2ff"
+                  variant="outlined"
+                  class="analytics-period-toggle"
+                >
+                  <v-btn value="7d" size="small" class="px-3 font-weight-medium">
+                    Last 7 Days
+                  </v-btn>
+                  <v-btn value="30d" size="small" class="px-3 font-weight-medium">
+                    Last 30 Days
+                  </v-btn>
+                  <v-btn value="90d" size="small" class="px-3 font-weight-medium">
+                    Last 90 Days
+                  </v-btn>
+                </v-btn-toggle>
+
+                <v-btn
+                  icon="mdi-refresh"
+                  size="small"
+                  variant="tonal"
+                  color="#38bdf8"
+                  :loading="isAnalyticsLoading"
+                  title="Refresh visitor analytics"
+                  @click="fetchAnalytics(true)"
+                />
+              </div>
+            </div>
+
+            <!-- Activation Notice Banner -->
+            <div class="activation-notice-strip mt-4 pa-3 rounded-lg d-flex align-center justify-space-between flex-wrap ga-2">
+              <div class="d-flex align-center ga-2 text-caption">
+                <v-icon icon="mdi-information-outline" size="16" color="#00c2ff" />
+                <span class="text-grey-lighten-2">
+                  <strong>Analytics collection started:</strong> October 29, 2026.
+                  Days prior to activation date reflect zero recorded traffic rather than historical data.
+                </span>
+              </div>
+              <div v-if="lastUpdatedTime" class="text-caption text-grey-lighten-2 d-flex align-center ga-1">
+                <v-icon icon="mdi-clock-outline" size="14" color="grey-lighten-1" />
+                <span>Synchronized at {{ lastUpdatedTime }}</span>
+              </div>
+            </div>
+          </v-card>
+
+          <!-- Analytics Error Alert -->
+          <v-alert
+            v-if="analyticsError"
+            type="error"
+            variant="tonal"
+            closable
+            class="mb-6"
+            @click:close="analyticsError = ''"
+          >
+            <div class="d-flex align-center justify-space-between flex-wrap ga-2">
+              <span>{{ analyticsError }}</span>
+              <v-btn size="small" variant="outlined" color="error" @click="fetchAnalytics(true)">
+                Retry
+              </v-btn>
+            </div>
+          </v-alert>
+
+          <!-- Initial Loading State -->
+          <div v-if="isAnalyticsLoading && !analyticsData" class="text-center py-12">
+            <v-progress-circular indeterminate color="#00c2ff" size="48" class="mb-4" />
+            <div class="text-h6 text-white font-weight-medium">Collecting visitor data...</div>
+            <div class="text-body-2 text-grey-lighten-1 mt-1">
+              Synchronizing real-time analytics from MongoDB Atlas backend
+            </div>
+          </div>
+
+          <template v-else>
+            <!-- ========================================================= -->
+            <!-- 1. PROMINENT KPI SUMMARY METRIC CARDS                     -->
+            <!-- ========================================================= -->
+            <v-row class="mb-6 gy-4">
+              <!-- Total Visitors -->
+              <v-col cols="12" sm="6" lg="3">
+                <v-card class="kpi-card kpi-card--analytics pa-4 h-100">
+                  <div class="d-flex align-center justify-space-between">
+                    <div>
+                      <div class="text-caption text-grey-lighten-1 font-weight-medium text-uppercase tracking-wider">
+                        👥 Total Visitors
+                      </div>
+                      <div class="text-h4 font-weight-bold text-white mt-1">
+                        {{ analyticsData?.summary?.totalVisitors || 0 }}
+                      </div>
+                    </div>
+                    <div class="kpi-icon-wrapper bg-navy">
+                      <v-icon icon="mdi-account-group" color="#00c2ff" size="28" />
+                    </div>
+                  </div>
+                  <div class="text-caption text-grey-lighten-2 mt-3 d-flex align-center ga-1">
+                    <v-icon icon="mdi-calendar-check-outline" size="14" color="#00c2ff" />
+                    <span>Distinct visitors since activation</span>
+                  </div>
+                </v-card>
+              </v-col>
+
+              <!-- Visitors Today -->
+              <v-col cols="12" sm="6" lg="3">
+                <v-card class="kpi-card kpi-card--analytics pa-4 h-100">
+                  <div class="d-flex align-center justify-space-between">
+                    <div>
+                      <div class="text-caption text-grey-lighten-1 font-weight-medium text-uppercase tracking-wider">
+                        📅 Visitors Today
+                      </div>
+                      <div class="text-h4 font-weight-bold text-white mt-1">
+                        {{ analyticsData?.summary?.todayVisitors || 0 }}
+                      </div>
+                    </div>
+                    <div class="kpi-icon-wrapper bg-navy">
+                      <v-icon icon="mdi-calendar-today" color="#38bdf8" size="28" />
+                    </div>
+                  </div>
+                  <div class="text-caption text-grey-lighten-2 mt-3 d-flex align-center justify-space-between flex-wrap ga-1">
+                    <span class="d-flex align-center ga-1">
+                      <v-icon icon="mdi-history" size="14" color="grey-lighten-1" />
+                      <span>Yesterday: {{ analyticsData?.summary?.yesterdayVisitors || 0 }}</span>
+                    </span>
+                    <v-chip size="x-small" color="#00c2ff" variant="tonal" class="font-weight-bold">
+                      {{ analyticsData?.summary?.todayVisits || 0 }} visits
+                    </v-chip>
+                  </div>
+                </v-card>
+              </v-col>
+
+              <!-- Visitors Last 7 Days -->
+              <v-col cols="12" sm="6" lg="3">
+                <v-card class="kpi-card kpi-card--analytics pa-4 h-100">
+                  <div class="d-flex align-center justify-space-between">
+                    <div>
+                      <div class="text-caption text-grey-lighten-1 font-weight-medium text-uppercase tracking-wider">
+                        📈 Visitors Last 7 Days
+                      </div>
+                      <div class="text-h4 font-weight-bold text-white mt-1">
+                        {{ analyticsData?.summary?.last7DaysVisitors || 0 }}
+                      </div>
+                    </div>
+                    <div class="kpi-icon-wrapper bg-navy">
+                      <v-icon icon="mdi-chart-line-variant" color="#7dd3fc" size="28" />
+                    </div>
+                  </div>
+                  <div class="text-caption text-grey-lighten-2 mt-3 d-flex align-center justify-space-between flex-wrap ga-1">
+                    <span class="d-flex align-center ga-1">
+                      <v-icon icon="mdi-calendar-range" size="14" color="#7dd3fc" />
+                      <span>Rolling 7-day window</span>
+                    </span>
+                    <v-chip size="x-small" color="#7dd3fc" variant="tonal" class="font-weight-bold">
+                      {{ analyticsData?.summary?.last7DaysVisits || 0 }} visits
+                    </v-chip>
+                  </div>
+                </v-card>
+              </v-col>
+
+              <!-- Visitors Last 30 Days -->
+              <v-col cols="12" sm="6" lg="3">
+                <v-card class="kpi-card kpi-card--analytics pa-4 h-100">
+                  <div class="d-flex align-center justify-space-between">
+                    <div>
+                      <div class="text-caption text-grey-lighten-1 font-weight-medium text-uppercase tracking-wider">
+                        📊 Visitors Last 30 Days
+                      </div>
+                      <div class="text-h4 font-weight-bold text-white mt-1">
+                        {{ analyticsData?.summary?.last30DaysVisitors || 0 }}
+                      </div>
+                    </div>
+                    <div class="kpi-icon-wrapper bg-navy">
+                      <v-icon icon="mdi-poll" color="#a78bfa" size="28" />
+                    </div>
+                  </div>
+                  <div class="text-caption text-grey-lighten-2 mt-3 d-flex align-center justify-space-between flex-wrap ga-1">
+                    <span class="d-flex align-center ga-1">
+                      <v-icon icon="mdi-calendar-month-outline" size="14" color="#a78bfa" />
+                      <span>Rolling 30-day window</span>
+                    </span>
+                    <v-chip size="x-small" color="#a78bfa" variant="tonal" class="font-weight-bold">
+                      {{ analyticsData?.summary?.last30DaysVisits || 0 }} visits
+                    </v-chip>
+                  </div>
+                </v-card>
+              </v-col>
+            </v-row>
+
+            <!-- ========================================================= -->
+            <!-- 2. TERMINOLOGY & USER JOURNEY BREAKDOWN                   -->
+            <!-- ========================================================= -->
+            <v-card class="pa-4 mb-6 terminology-card">
+              <div class="d-flex align-center justify-space-between flex-wrap ga-4">
+                <div class="d-flex align-center flex-wrap ga-4">
+                  <!-- Term: Total Visits -->
+                  <div class="stat-segment">
+                    <div class="text-caption text-grey-lighten-1">Total Visits / Sessions</div>
+                    <div class="text-h6 font-weight-bold text-sky mt-0-5">
+                      {{ analyticsData?.summary?.totalVisits || 0 }}
+                    </div>
+                  </div>
+
+                  <v-divider vertical class="d-none d-sm-block my-1" />
+
+                  <!-- Term: Unique Visitors -->
+                  <div class="stat-segment">
+                    <div class="text-caption text-grey-lighten-1">Unique Anonymous Visitors</div>
+                    <div class="text-h6 font-weight-bold text-cyan mt-0-5">
+                      {{ analyticsData?.summary?.totalVisitors || 0 }}
+                    </div>
+                  </div>
+
+                  <v-divider vertical class="d-none d-sm-block my-1" />
+
+                  <!-- Term: New Visitors -->
+                  <div class="stat-segment">
+                    <div class="text-caption text-grey-lighten-1">New Visitors (in period)</div>
+                    <div class="text-h6 font-weight-bold text-emerald mt-0-5">
+                      {{ analyticsData?.summary?.newVisitors || 0 }}
+                    </div>
+                  </div>
+
+                  <v-divider vertical class="d-none d-sm-block my-1" />
+
+                  <!-- Term: Returning Visitors -->
+                  <div class="stat-segment">
+                    <div class="text-caption text-grey-lighten-1">Returning Visitors (in period)</div>
+                    <div class="text-h6 font-weight-bold text-amber mt-0-5">
+                      {{ analyticsData?.summary?.returningVisitors || 0 }}
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Terminology Guide Badge -->
+                <div class="terminology-hint text-caption text-grey-lighten-2 d-flex align-center ga-2 pa-2 rounded">
+                  <v-icon icon="mdi-information-outline" size="16" color="#38bdf8" />
+                  <span>
+                    <strong>Visitors</strong> = Unique individuals counted once per day.
+                    <strong>Visits</strong> = Total sessions (refreshes deduplicated).
+                  </span>
+                </div>
+              </div>
+            </v-card>
+
+            <!-- ========================================================= -->
+            <!-- 3. VISITOR TREND CHART SECTION                            -->
+            <!-- ========================================================= -->
+            <v-card class="pa-4 pa-md-6 mb-6 chart-section-card">
+              <div class="d-flex align-center justify-space-between flex-wrap ga-3 mb-4">
+                <div>
+                  <h3 class="text-h6 font-weight-bold text-white mb-0 d-flex align-center ga-2">
+                    <v-icon icon="mdi-chart-areaspline" color="#00c2ff" size="24" />
+                    <span>Visitor Trend</span>
+                  </h3>
+                  <div class="text-caption text-grey-lighten-1 mt-0-5">
+                    Daily trajectory for {{ analyticsRange === '7d' ? 'last 7 days' : analyticsRange === '90d' ? 'last 90 days' : 'last 30 days' }}
+                  </div>
+                </div>
+
+                <div class="d-flex align-center ga-2 text-caption text-grey-lighten-2">
+                  <v-chip size="small" variant="outlined" color="#00c2ff">
+                    {{ analyticsRange === '7d' ? '7 Days' : analyticsRange === '90d' ? '90 Days' : '30 Days' }} View
+                  </v-chip>
+                </div>
+              </div>
+
+              <!-- Interactive Trend Chart -->
+              <VisitorTrendChart
+                :data="analyticsData?.dailyHistory || []"
+                :range="analyticsRange"
+                :activation-date="analyticsData?.activationDate"
+              />
+
+              <!-- Pre-Activation Note -->
+              <div class="text-caption text-grey-lighten-2 mt-4 text-center">
+                <v-icon icon="mdi-shield-lock-outline" size="14" color="#00c2ff" class="mr-1" />
+                <span>
+                  Telemetry is recorded automatically from production interactions. No fake or static counts are displayed.
+                </span>
+              </div>
+            </v-card>
+
+            <!-- ========================================================= -->
+            <!-- 4. TOP PAGES & AUDIENCE BREAKDOWN                         -->
+            <!-- ========================================================= -->
+            <v-row class="mb-6 gy-4">
+              <!-- Top Pages Visited -->
+              <v-col cols="12" md="6">
+                <v-card class="pa-4 pa-md-5 h-100 breakdown-card">
+                  <div class="d-flex align-center justify-space-between mb-4">
+                    <h3 class="text-subtitle-1 font-weight-bold text-white mb-0 d-flex align-center ga-2">
+                      <v-icon icon="mdi-file-document-outline" color="#38bdf8" size="20" />
+                      <span>Top Public Pages Visited</span>
+                    </h3>
+                    <v-chip size="x-small" color="#38bdf8" variant="tonal" class="font-weight-bold">
+                      {{ analyticsData?.topPages?.length || 0 }} pages tracked
+                    </v-chip>
+                  </div>
+
+                  <div v-if="!analyticsData?.topPages || analyticsData.topPages.length === 0" class="text-center py-8 text-grey-lighten-2 text-caption">
+                    <v-icon icon="mdi-web" size="32" class="mb-2 text-grey-darken-1" />
+                    <div>No page view interactions recorded yet in this period.</div>
+                  </div>
+
+                  <div v-else class="top-pages-list d-flex flex-column ga-2-5">
+                    <div
+                      v-for="(page, idx) in analyticsData.topPages"
+                      :key="page.path"
+                      class="page-item pa-2-5 rounded-lg"
+                    >
+                      <div class="d-flex align-center justify-space-between mb-1">
+                        <div class="d-flex align-center ga-2 text-truncate mr-2">
+                          <span class="page-rank text-caption font-weight-bold text-cyan">#{{ idx + 1 }}</span>
+                          <span class="text-body-2 font-weight-medium text-white text-truncate">{{ page.path }}</span>
+                        </div>
+                        <span class="text-caption font-weight-bold text-sky whitespace-nowrap">
+                          {{ page.views }} {{ page.views === 1 ? 'view' : 'views' }}
+                        </span>
+                      </div>
+                      <v-progress-linear
+                        :model-value="analyticsData.topPages[0]?.views ? (page.views / analyticsData.topPages[0].views) * 100 : 0"
+                        color="#00c2ff"
+                        bg-color="rgba(0, 54, 111, 0.4)"
+                        height="4"
+                        rounded
+                      />
+                    </div>
+                  </div>
+                </v-card>
+              </v-col>
+
+              <!-- Device & Browser Distribution -->
+              <v-col cols="12" md="6">
+                <v-card class="pa-4 pa-md-5 h-100 breakdown-card">
+                  <!-- Devices Breakdown -->
+                  <div class="mb-5">
+                    <div class="d-flex align-center justify-space-between mb-3">
+                      <h3 class="text-subtitle-1 font-weight-bold text-white mb-0 d-flex align-center ga-2">
+                        <v-icon icon="mdi-devices" color="#00c2ff" size="20" />
+                        <span>Device Distribution</span>
+                      </h3>
+                      <span class="text-caption text-grey-lighten-1">Sessions</span>
+                    </div>
+
+                    <div class="d-flex align-center justify-space-around flex-wrap ga-3 text-center pa-3 rounded-lg bg-slate-900-subtle">
+                      <div class="device-stat">
+                        <v-icon icon="mdi-laptop" color="#00c2ff" size="24" />
+                        <div class="text-caption text-grey-lighten-1 mt-1">Desktop</div>
+                        <div class="text-subtitle-2 font-weight-bold text-white">
+                          {{ analyticsData?.devices?.desktop || 0 }}
+                        </div>
+                      </div>
+
+                      <v-divider vertical class="my-1" />
+
+                      <div class="device-stat">
+                        <v-icon icon="mdi-cellphone" color="#38bdf8" size="24" />
+                        <div class="text-caption text-grey-lighten-1 mt-1">Mobile</div>
+                        <div class="text-subtitle-2 font-weight-bold text-white">
+                          {{ analyticsData?.devices?.mobile || 0 }}
+                        </div>
+                      </div>
+
+                      <v-divider vertical class="my-1" />
+
+                      <div class="device-stat">
+                        <v-icon icon="mdi-tablet" color="#a78bfa" size="24" />
+                        <div class="text-caption text-grey-lighten-1 mt-1">Tablet</div>
+                        <div class="text-subtitle-2 font-weight-bold text-white">
+                          {{ analyticsData?.devices?.tablet || 0 }}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Browser Breakdown -->
+                  <div>
+                    <div class="d-flex align-center justify-space-between mb-3">
+                      <h3 class="text-subtitle-1 font-weight-bold text-white mb-0 d-flex align-center ga-2">
+                        <v-icon icon="mdi-web" color="#38bdf8" size="20" />
+                        <span>Browser Families</span>
+                      </h3>
+                      <span class="text-caption text-grey-lighten-1">Sessions</span>
+                    </div>
+
+                    <div class="d-flex align-center justify-space-around flex-wrap ga-2 text-center pa-3 rounded-lg bg-slate-900-subtle">
+                      <div class="browser-stat">
+                        <v-icon icon="mdi-google-chrome" color="#38bdf8" size="20" />
+                        <div class="text-caption text-grey-lighten-1">Chrome</div>
+                        <div class="text-caption font-weight-bold text-white">
+                          {{ analyticsData?.browsers?.chrome || 0 }}
+                        </div>
+                      </div>
+
+                      <div class="browser-stat">
+                        <v-icon icon="mdi-apple-safari" color="#00c2ff" size="20" />
+                        <div class="text-caption text-grey-lighten-1">Safari</div>
+                        <div class="text-caption font-weight-bold text-white">
+                          {{ analyticsData?.browsers?.safari || 0 }}
+                        </div>
+                      </div>
+
+                      <div class="browser-stat">
+                        <v-icon icon="mdi-firefox" color="#f97316" size="20" />
+                        <div class="text-caption text-grey-lighten-1">Firefox</div>
+                        <div class="text-caption font-weight-bold text-white">
+                          {{ analyticsData?.browsers?.firefox || 0 }}
+                        </div>
+                      </div>
+
+                      <div class="browser-stat">
+                        <v-icon icon="mdi-microsoft-edge" color="#0284c7" size="20" />
+                        <div class="text-caption text-grey-lighten-1">Edge</div>
+                        <div class="text-caption font-weight-bold text-white">
+                          {{ analyticsData?.browsers?.edge || 0 }}
+                        </div>
+                      </div>
+
+                      <div class="browser-stat">
+                        <v-icon icon="mdi-dots-horizontal-circle-outline" color="#94a3b8" size="20" />
+                        <div class="text-caption text-grey-lighten-1">Other</div>
+                        <div class="text-caption font-weight-bold text-white">
+                          {{ analyticsData?.browsers?.other || 0 }}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </v-card>
+              </v-col>
+            </v-row>
+
+            <!-- ========================================================= -->
+            <!-- 5. ENTERPRISE PRIVACY & ARCHITECTURE SEAL                 -->
+            <!-- ========================================================= -->
+            <v-card class="pa-4 pa-md-5 privacy-seal-card">
+              <div class="d-flex align-center flex-wrap ga-3">
+                <div class="privacy-seal-icon bg-navy pa-3 rounded-circle">
+                  <v-icon icon="mdi-shield-lock" color="#00c2ff" size="28" />
+                </div>
+                <div class="flex-grow-1">
+                  <h4 class="text-subtitle-1 font-weight-bold text-white mb-1">
+                    First-Party Privacy & Security Architecture
+                  </h4>
+                  <div class="text-caption text-grey-lighten-1">
+                    Visitor counts are collected directly through Next Challenge's Express & MongoDB backend.
+                    No personal data, contact message contents, or IP addresses are persisted in analytics documents.
+                    Anonymous HMAC hashes auto-expire from MongoDB after 7 to 60 days via TTL indexes, ensuring high scalability and full compliance.
+                  </div>
+                </div>
+              </div>
+            </v-card>
+          </template>
+        </template>
       </v-container>
     </div>
 
@@ -3223,5 +3784,115 @@ onUnmounted(() => {
 
 .enrollment-item-card--approved {
   border-left: 4px solid #10b981 !important;
+}
+
+/* Website Visitors & Analytics Styles */
+.analytics-header-card {
+  background: linear-gradient(135deg, rgba(0, 54, 111, 0.45) 0%, #0B0F19 100%) !important;
+  border: 1px solid rgba(0, 194, 255, 0.3) !important;
+  border-radius: 14px;
+}
+
+.activation-notice-strip {
+  background: rgba(0, 54, 111, 0.25);
+  border: 1px solid rgba(0, 194, 255, 0.2);
+}
+
+.analytics-period-toggle {
+  background: #0B0F19 !important;
+  border-color: rgba(0, 54, 111, 0.6) !important;
+}
+
+.kpi-card--analytics {
+  background: #0B0F19 !important;
+  border: 1px solid rgba(0, 54, 111, 0.45) !important;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+
+.kpi-card--analytics:hover {
+  border-color: rgba(0, 194, 255, 0.5) !important;
+  box-shadow: 0 4px 18px rgba(0, 54, 111, 0.25);
+}
+
+.terminology-card {
+  background: rgba(11, 15, 25, 0.8) !important;
+  border: 1px solid rgba(0, 54, 111, 0.4) !important;
+  border-radius: 12px;
+}
+
+.terminology-hint {
+  background: rgba(0, 54, 111, 0.3);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  max-width: 480px;
+}
+
+.stat-segment {
+  min-width: 140px;
+}
+
+.chart-section-card {
+  background: #0B0F19 !important;
+  border: 1px solid rgba(0, 54, 111, 0.45) !important;
+  border-radius: 14px;
+}
+
+.breakdown-card {
+  background: #0B0F19 !important;
+  border: 1px solid rgba(0, 54, 111, 0.4) !important;
+  border-radius: 12px;
+}
+
+.bg-slate-900-subtle {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(0, 54, 111, 0.3);
+}
+
+.page-item {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(0, 54, 111, 0.25);
+  transition: background 0.15s ease;
+}
+
+.page-item:hover {
+  background: rgba(0, 54, 111, 0.25);
+}
+
+.privacy-seal-card {
+  background: linear-gradient(135deg, rgba(6, 27, 54, 0.8) 0%, #0B0F19 100%) !important;
+  border: 1px solid rgba(0, 194, 255, 0.35) !important;
+  border-radius: 14px;
+}
+
+.text-cyan {
+  color: #00c2ff !important;
+}
+
+.text-sky {
+  color: #38bdf8 !important;
+}
+
+.text-emerald {
+  color: #10b981 !important;
+}
+
+.text-amber {
+  color: #f59e0b !important;
+}
+
+.whitespace-nowrap {
+  white-space: nowrap;
+}
+
+.pa-2-5 {
+  padding: 10px !important;
+}
+
+.ga-2-5 {
+  gap: 10px !important;
+}
+
+.mt-0-5 {
+  margin-top: 2px !important;
 }
 </style>

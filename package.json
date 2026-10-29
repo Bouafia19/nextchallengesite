@@ -8,7 +8,9 @@
     "build": "vite build",
     "preview": "vite preview",
     "server": "node server/server.js",
-    "start": "node server/server.js"
+    "start": "node server/server.js",
+    "test:analytics": "node test-analytics.js",
+    "test": "node verify-admin-mongodb.js && node test-analytics.js"
   },
   "dependencies": {
     "@mdi/font": "^7.4.47",
