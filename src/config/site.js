@@ -348,18 +348,18 @@ export const siteConfig = {
       buttonText: 'View Details',
       cardCta: 'Explore Details',
       demoCta: 'Open Live Demo',
-      url: import.meta.env.VITE_TOURIVA_URL || 'https://touriva-web.onrender.com',
-      logo: '/assets/products/touriva/symbol.svg',
-      logoAlt: 'Touriva Compass Symbol',
+      url: import.meta.env.VITE_TOURIVA_URL || 'https://touriva.nextchallenge.tech',
+      logo: '/assets/products/touriva/touriva.png',
+      logoAlt: 'Touriva Official Logo',
       icon: 'mdi-compass-outline',
       gradient: 'linear-gradient(135deg, #102d27 0%, #173f35 50%, #21866b 100%)',
       accentColor: '#21866b',
       tags: ['Vue 3.5', 'Vuetify 4', 'Tourism Discovery', 'Excursions Booking', 'Artisan Shop', 'Geo-spatial Search'],
       platforms: [
         { name: 'Web Application (Responsive & PWA)', icon: 'mdi-web', color: '#21866b' },
-        { name: 'Administrative Portal (Touriva Admin)', icon: 'mdi-shield-crown', color: '#d9b98c' },
-        { name: 'Geo-Spatial Cloud API (Express 5)', icon: 'mdi-database-marker', color: '#38bdf8' },
-        { name: 'Artisan Travel Store (E-Commerce)', icon: 'mdi-storefront', color: '#fb923c' }
+        { name: 'Marketplace Storefront (E-Commerce)', icon: 'mdi-storefront', color: '#fb923c' },
+        { name: 'Artisan & Seller Portal', icon: 'mdi-store-cog', color: '#d9b98c' },
+        { name: 'Geo-Spatial Cloud API (Express 5)', icon: 'mdi-database-marker', color: '#38bdf8' }
       ],
       highlights: [
         'Attraction discovery & interactive maps',
@@ -369,26 +369,37 @@ export const siteConfig = {
       ],
       applications: [
         {
-          name: 'Touriva Web Application',
-          role: 'Traveler Discovery & Booking',
+          name: 'Touriva Tourism Platform',
+          role: 'Traveler Discovery & Excursions',
           category: 'Tourism Discovery Portal',
-          url: 'https://touriva-web.onrender.com',
+          url: import.meta.env.VITE_TOURIVA_URL || 'https://touriva.nextchallenge.tech',
           icon: 'mdi-compass-outline',
-          badge: 'Public Platform',
+          badge: 'Main Platform',
           accent: '#21866b',
           description:
-            'Interactive tourism discovery, geo-spatial maps, historical sites, guided excursion bookings, and regional artisan marketplace.'
+            'Interactive tourism discovery, geo-spatial maps, historical sites, guided excursion bookings, and regional travel itineraries.'
         },
         {
-          name: 'Administrative Console',
-          role: 'Agency & Administration',
-          category: 'Tourism Authority & Agency Portal',
-          url: 'https://touriva-admin.onrender.com',
-          icon: 'mdi-shield-crown-outline',
-          badge: 'Admin Panel',
+          name: 'Touriva Marketplace Storefront',
+          role: 'Artisan Goods & Travel Equipment',
+          category: 'E-Commerce Marketplace',
+          url: import.meta.env.VITE_TOURIVA_MARKET_URL || 'https://market.touriva.nextchallenge.tech',
+          icon: 'mdi-storefront-outline',
+          badge: 'Public Store',
+          accent: '#fb923c',
+          description:
+            'Integrated artisan marketplace showcasing regional crafts, traditional goods, and travel accessories with multi-vendor catalog.'
+        },
+        {
+          name: 'Touriva Seller & Artisan Portal',
+          role: 'Merchant & Artisan Management',
+          category: 'Vendor Operations Portal',
+          url: import.meta.env.VITE_TOURIVA_SELLER_URL || 'https://seller.market.touriva.nextchallenge.tech',
+          icon: 'mdi-store-cog-outline',
+          badge: 'Seller Portal',
           accent: '#d9b98c',
           description:
-            'Administrative portal for tourism site curation, hospitality listings, tour guide certification, and excursion reservations.'
+            'Dedicated vendor management portal for local artisans and regional merchants to list products, manage inventory, and process orders.'
         }
       ],
       apks: [
