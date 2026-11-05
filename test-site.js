@@ -277,9 +277,9 @@ async function runAudit() {
     console.log('  Found Product Actions:', productCards.map((p) => ({ href: p.href, rel: p.rel })))
 
     const expectedProducts = [
-      { name: 'Fleetora', url: 'https://fleetora-web.onrender.com/' },
-      { name: 'Inventory Demo', url: 'https://inventory-v2-web-demo.onrender.com/' },
-      { name: 'Touriva', url: 'https://touriva-web.onrender.com/' }
+      { name: 'Fleetora', url: 'https://fleetora-web.onrender.com' },
+      { name: 'Inventory Demo', url: 'https://inventory.nextchallenge.tech' },
+      { name: 'Touriva', url: 'https://touriva-web.onrender.com' }
     ]
 
     for (const expected of expectedProducts) {

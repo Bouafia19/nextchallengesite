@@ -90,7 +90,10 @@ export const siteConfig = {
       buttonText: 'View Details',
       cardCta: 'Explore Details',
       demoCta: 'Open Live Demo',
-      url: import.meta.env.VITE_INVENTORY_URL || 'https://inventory.nextchallenge.tech',
+      url:
+        import.meta.env.VITE_INVENTORY_URL && !import.meta.env.VITE_INVENTORY_URL.includes('onrender.com')
+          ? import.meta.env.VITE_INVENTORY_URL
+          : 'https://inventory.nextchallenge.tech',
       logo: '/assets/products/inventory-v2/pallet.png',
       logoAlt: 'Inventory V2 Logo',
       icon: 'mdi-warehouse',

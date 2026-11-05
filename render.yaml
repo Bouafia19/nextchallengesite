@@ -29,7 +29,7 @@ services:
       - key: VITE_FLEETORA_URL
         value: https://fleetora-web.onrender.com
       - key: VITE_INVENTORY_URL
-        value: https://inventory-v2-web-demo.onrender.com
+        value: https://inventory.nextchallenge.tech
       - key: VITE_TOURIVA_URL
         value: https://touriva-web.onrender.com
       - key: VITE_FACEBOOK_URL

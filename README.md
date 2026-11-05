@@ -30,7 +30,7 @@ The website showcases real products developed by Next Challenge, with direct lin
    - **Action:** `View Fleetora`
 
 2. **Inventory Demo** — *Modern Stock & Multi-Warehouse Operations*  
-   - **URL:** [https://inventory-v2-web-demo.onrender.com](https://inventory-v2-web-demo.onrender.com)  
+   - **URL:** [https://inventory.nextchallenge.tech](https://inventory.nextchallenge.tech)  
    - **Stack:** Vue 3, Pinia, Multi-Warehouse, Commercial Invoicing, Barcode Scanner, Algerian Dinar DA  
    - **Action:** `View Demo`
 
